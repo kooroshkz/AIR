@@ -1,5 +1,5 @@
 # This is the main file which runs everything
-from src.example import component_says_hello()
+from src.example import component_says_hello
 
 def main():
     """ Main entry point """
