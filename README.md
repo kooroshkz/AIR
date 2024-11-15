@@ -11,6 +11,10 @@ It runs our whole and complete application. So the end user should be able to ru
 ```sh
 python main.py
 ```
+## How do I write good code?
+Write in snake_case, always include docstrings, etc 
+- Just make sure that when you push the file the pylint process doesnt fail
+- It only fails if the code that was pushed is not written well
 ## How to run main.py?
 Install the requirements:
 ```sh
