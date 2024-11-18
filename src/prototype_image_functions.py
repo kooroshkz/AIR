@@ -1,3 +1,14 @@
+"""
+Basic image functions for the prototype
+Inludes:
+    -grayscale
+    -cropping
+    -changing saturation 
+    -edge detection & enhance
+
+every function calls some corresponding built-in PIL function, but this way we avoid the other sections having to deal with PIL functions directly
+"""
+
 from PIL import Image
 from PIL.JpegImagePlugin import JpegImageFile as JPEG
 from PIL import ImageEnhance
