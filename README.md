@@ -1,5 +1,57 @@
 # AIR
 Someone can change this description
+
+## Features
+
+- Grayscale Conversion
+- Saturation Adjustment
+- Edge Enhancement
+- Edge Detection
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8+
+- Napari
+- pip
+
+
+## Usage
+
+1. `python main.py`
+2. Load an image
+3. Open the "Image Filters" dock widget
+4. Select an image layer
+5. Apply filters using the provided controls
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+
+# Install development dependencies
+pip install -e .[dev]
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src
+
+# Run specific test markers
+pytest -v -m unit
+pytest -v -m integration
+```
+
 ## What to remember when writing code here?
 1) All requirements that are needed to run some .py program has to be put in requirements.txt
 2) Write test cases for the code that you develop(I can then verify the future integrity of the code with automated testing)
@@ -16,12 +68,4 @@ Write in snake_case, always include docstrings, etc
 - Just make sure that when you push the file the pylint CICD process doesnt fail > It only fails if the code that was pushed is not written well
 ## What does the CICD do?
 Currently it only formats the code, and checks for poorly written code. In the future this process will automatically run your tests.
-## How to run main.py?
-Install the requirements:
-```sh
-pip install -r requirements.txt
-```
-Then you can run the application:
-```sh
-python main.py
-```
+

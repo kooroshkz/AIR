@@ -1,0 +1,20 @@
+# Core dependencies
+napari[all]>=0.4.16
+numpy>=1.20.0
+pillow>=8.0.0
+qtpy
+
+# Development and testing dependencies
+pytest
+pytest-cov
+pytest-qt
+pytest-benchmark  # For performance testing
+
+# Optional: for type checking
+mypy
+types-Pillow
+
+# Plugin development
+setuptools
+wheel
+
