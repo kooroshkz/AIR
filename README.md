@@ -1,5 +1,5 @@
 # AIR
-Someone can change this description
+The Interactive Cell Segmentation Plugin for Napari allows biologists to control image analysis with voice commands. This plugin enables users to zoom, highlight areas, adjust contrast, and mark cells by simply speaking. The plugin makes cell segmentation and image enhancement faster and more intuitive, providing a simple way to interact with their data.
 
 ## Features
 
@@ -15,7 +15,6 @@ Someone can change this description
 - Python 3.8+
 - Napari
 - pip
-
 
 ## Usage
 
