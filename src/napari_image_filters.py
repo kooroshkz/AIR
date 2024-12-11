@@ -85,7 +85,10 @@ def apply_grayscale(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     grayscale_pil = pil_img.convert("L")
     
     # Convert back to numpy array
-    return np.array(grayscale_pil)
+    grayscale_array = np.array(grayscale_pil)
+
+    # Return a 3D array for consistency
+    return grayscale_array[:, :, np.newaxis]
 
 def apply_crop(img: Union[Image.Image, np.ndarray, str], 
                corners: Tuple[int, int, int, int]) -> np.ndarray:
@@ -146,7 +149,7 @@ def apply_saturation(img: Union[Image.Image, np.ndarray, str],
     # Apply saturation
     enhancer = ImageEnhance.Color(pil_img)
     saturated_pil = enhancer.enhance(saturation_level)
-    
+
     # Convert back to numpy array
     return np.array(saturated_pil)
 
