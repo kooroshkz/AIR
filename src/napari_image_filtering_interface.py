@@ -36,7 +36,8 @@ class ImageFilterWidget(QWidget):
         """
         super().__init__()
         self.viewer = viewer
-        
+        self.original_data = None
+
         # Create main layout
         layout = QVBoxLayout()
         
@@ -51,7 +52,7 @@ class ImageFilterWidget(QWidget):
         sat_layout.addWidget(self.sat_label)
         sat_layout.addWidget(self.sat_slider)
         layout.addLayout(sat_layout)
-        
+
         # Filter buttons
         filter_buttons = [
             ("Grayscale", self._apply_grayscale),
@@ -86,6 +87,9 @@ class ImageFilterWidget(QWidget):
         # Find the first image layer
         for layer in selected_layers:
             if isinstance(layer, napari.layers.Image):
+                # Store original data for reset (The first time called)
+                if self.original_data is None:
+                    self.original_data = layer.data.copy()
                 return layer
         
         # If no image layer is found
@@ -101,13 +105,15 @@ class ImageFilterWidget(QWidget):
         # Convert slider value to saturation multiplier
         sat_value = value / 100.0
         self.sat_label.setText(f"Saturation: {sat_value:.2f}")
+        self._apply_saturation()
     
-    def _apply_filter(self, filter_func):
+    def _apply_filter(self, filter_func, reset = False):
         """
         Apply a filter to the current image layer.
-        
+
         Args:
             filter_func (callable): Filter function to apply
+            reset (bool): Whether to reset to original data before applying filter
         """
         try:
             # Get current layer
@@ -116,8 +122,7 @@ class ImageFilterWidget(QWidget):
             # Handle multi-dimensional image data
             original_data = layer.data
             
-            # If the image is multi-dimensional, apply filter to each 2D slice
-            if original_data.ndim > 2:
+            if  filter_func in [apply_edge_enhance, apply_edge_detection]:
                 # Create a list to store filtered slices
                 filtered_slices = []
                 
@@ -137,16 +142,23 @@ class ImageFilterWidget(QWidget):
                 
                 # Reconstruct the multi-dimensional array
                 filtered_array = np.stack(filtered_slices)
-            else:
-                # For 2D images, apply filter directly
-                filtered_array = filter_func(original_data)
                 
+                # Store original data, so that we don't lose the build-up of filters
+                self.original_data = layer.data.copy()
+            else:
+                if reset:
+                    # Reset to the original data before applying the filter
+                    original_data = self.original_data.copy()
+
+                # Apply the filter
+                filtered_array = filter_func(original_data)
+
                 # Ensure filtered array is a numpy array
                 if hasattr(filtered_array, '__array__'):
                     filtered_array = np.asarray(filtered_array)
                 elif not isinstance(filtered_array, np.ndarray):
                     filtered_array = np.array(filtered_array)
-            
+
             # Update layer
             layer.data = filtered_array
         
@@ -154,17 +166,17 @@ class ImageFilterWidget(QWidget):
             print(f"Error applying filter: {e}")
             import traceback
             traceback.print_exc()
-    
-    def _apply_grayscale(self):
-        """Apply grayscale filter to current layer."""
-        self._apply_filter(apply_grayscale)
-    
+
     def _apply_saturation(self):
         """Apply saturation adjustment to current layer."""
         sat_value = self.sat_slider.value() / 100.0
         # Connect the saturation button to the filter method
-        self._apply_filter(lambda img: apply_saturation(img, sat_value))
-    
+        self._apply_filter(lambda img: apply_saturation(img, sat_value), True)
+
+    def _apply_grayscale(self):
+        """Apply grayscale filter to current layer."""
+        self._apply_filter(apply_grayscale)
+
     def _apply_edge_enhance(self):
         """Apply edge enhancement to current layer."""
         self._apply_filter(apply_edge_enhance)
