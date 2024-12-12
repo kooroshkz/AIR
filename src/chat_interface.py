@@ -5,6 +5,12 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import Qt
 from openai import OpenAI
 import os
+import numpy as np
+from .napari_image_filters import (
+    apply_gaussian_blur, apply_contrast_enhancement,
+    apply_texture_analysis, apply_adaptive_threshold,
+    apply_sharpening
+)
 
 
 class ChatWidget(QWidget):
@@ -18,11 +24,11 @@ class ChatWidget(QWidget):
             'saturation': self.filter_widget._update_saturation,
             'edge_enhance': self.filter_widget._apply_edge_enhance,
             'edge_detection': self.filter_widget._apply_edge_detection,
-            'blur': self.filter_widget._apply_gaussian_blur,
-            'contrast': self.filter_widget._apply_contrast_enhancement,
-            'texture': self.filter_widget._apply_texture_analysis,
-            'threshold': self.filter_widget._apply_adaptive_threshold,
-            'sharpen': self.filter_widget._apply_sharpening
+            'blur': apply_gaussian_blur,
+            'contrast': apply_contrast_enhancement,
+            'texture': apply_texture_analysis,
+            'threshold': apply_adaptive_threshold,
+            'sharpen': apply_sharpening,
         }
 
         # Initialize your LLM client here
@@ -31,25 +37,52 @@ class ChatWidget(QWidget):
         )
 
     def setup_ui(self):
+        """Configure the widget's user interface."""
         layout = QVBoxLayout()
 
-        # Chat history display
+        # Chat history with improved styling
         self.chat_history = QTextEdit()
         self.chat_history.setReadOnly(True)
+        self.chat_history.setStyleSheet("""
+            QTextEdit {
+                border: 1px solid #cccccc;
+                padding: 5px;
+            }
+        """)
         layout.addWidget(self.chat_history)
 
-        # Input field
+        # Input field with placeholder and styling
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Enter your image processing request...")
+        self.input_field.setStyleSheet("""
+            QLineEdit {
+                padding: 5px;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
         self.input_field.returnPressed.connect(self.process_input)
         layout.addWidget(self.input_field)
 
-        # Send button
+        # Send button with styling
         self.send_button = QPushButton("Send")
+        self.send_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0366d6;
+                color: white;
+                padding: 5px 15px;
+                border: none;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #0255b3;
+            }
+        """)
         self.send_button.clicked.connect(self.process_input)
         layout.addWidget(self.send_button)
 
         self.setLayout(layout)
+
 
     def process_input(self):
         user_input = self.input_field.text()
@@ -102,21 +135,37 @@ class ChatWidget(QWidget):
         )
         return response.choices[0].message.content
 
+    def change_layer(self, curr_layer, filtered_array):
+        self.filter_widget._push_to_history(curr_layer)
+        if hasattr(filtered_array, '__array__'):
+            filtered_array = np.asarray(filtered_array)
+        elif not isinstance(filtered_array, np.ndarray):
+            filtered_array = np.array(filtered_array)
+
+        curr_layer.data = filtered_array
+
+
     def execute_command(self, command):
         command = command.lower().strip()
         parts = command.split()
         cmd_name = parts[0]
 
         # Handle saturation separately since it needs an integer value
+        # Get current layer
+        layer = self.filter_widget._get_current_layer()
+        img = self.filter_widget.original_data.copy()
+        
+
         if 'saturation' in command:
             try:
                 value = int(command.split()[-1])
-                self.available_commands['saturation'](value)
+                filtered_array = self.available_commands['saturation'](value)
+                self.change_layer(layer, filtered_array)
                 self.add_to_chat(f"Executed: saturation with value {value}")
                 return
             except (IndexError, ValueError) as e:
                 print(e)
-                self.add_to_chat("Error: Saturation requires a numeric value between 0.0 and 2.0")
+                self.filter_widget.add_to_chat("Error: Saturation requires a numeric value between 0-200")
                 return
 
 
@@ -125,21 +174,24 @@ class ChatWidget(QWidget):
             try:
                 value = float(parts[1])
                 if cmd_name in ['blur', 'contrast', 'saturation', 'sharpen']:
-                    self.available_commands[cmd_name](value)
+                    filtered_array = self.available_commands[cmd_name](img, value)
+                    self.change_layer(layer, filtered_array)
                     self.add_to_chat(f"Executed: {cmd_name} with value {value}")
                     return
             except (IndexError, ValueError):
-                self.add_to_chat(f"Error: {cmd_name} requires a valid numeric value")
+                self.filter_widget.add_to_chat(f"Error: {cmd_name} requires a valid numeric value")
                 return
 
         # Handle commands without parameters
         if cmd_name in self.available_commands:
             try:
-                self.available_commands[cmd_name]()
+                filtered_array = self.available_commands[cmd_name](img)
+                self.change_layer(layer, filtered_array)
                 self.add_to_chat(f"Executed: {cmd_name}")
+                self.filter_widget._push_to_history(layer)
                 return
             except Exception as e:
-                self.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
+                self.filter_widget.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
                 return
 
         self.add_to_chat("I did not quite catch that one.")
