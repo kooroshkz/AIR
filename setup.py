@@ -9,17 +9,19 @@ setup(
         'napari',
         'numpy',
         'Pillow',
-        'qtpy'
+        'qtpy',
+        'mypy',
+        'types-Pillow',
+        'opencv-python',  
+        'scikit-image', 
+        'scipy',
+        'openai',
+        'python-dotenv'
     ],
     extras_require={
         'dev': [
             'pytest',
             'pytest-cov',
-            'mypy',
-            'types-Pillow',
-            'opencv-python',  
-            'scikit-image', 
-            'scipy'          
         ]
     },
     entry_points={
