@@ -14,6 +14,174 @@ Key Features:
 from typing import Union, Tuple
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
+import cv2
+from skimage.feature import local_binary_pattern
+from scipy.ndimage import gaussian_filter
+
+def apply_gaussian_blur(img: Union[Image.Image, np.ndarray, str], 
+                       radius: float = 2.0) -> np.ndarray:
+    """
+    Apply Gaussian blur to the image with adjustable radius.
+    
+    Args:
+        img (PIL.Image, numpy.ndarray, or str): Input image
+        radius (float): Blur radius (sigma value)
+    
+    Returns:
+        numpy.ndarray: Blurred image
+    """
+    if(radius < 0):
+        raise ValueError
+
+    pil_img = ensure_pil_image(img)
+    img_array = np.array(pil_img)
+    
+    # Apply gaussian blur
+    if len(img_array.shape) == 3:
+        # For RGB images, apply to each channel
+        blurred = np.zeros_like(img_array)
+        for i in range(img_array.shape[2]):
+            blurred[:,:,i] = gaussian_filter(img_array[:,:,i], sigma=radius)
+    else:
+        # For grayscale images
+        blurred = gaussian_filter(img_array, sigma=radius)
+    
+    return blurred
+
+def apply_contrast_enhancement(img: Union[Image.Image, np.ndarray, str],
+                             factor: float = 1.5) -> np.ndarray:
+    """
+    Enhance image contrast using adaptive histogram equalization.
+    
+    Args:
+        img (PIL.Image, numpy.ndarray, str): Input image
+        factor (float): Contrast enhancement factor
+    
+    Returns:
+        numpy.ndarray: Contrast-enhanced image
+    """
+    pil_img = ensure_pil_image(img)
+    img_array = np.array(pil_img)
+    
+    # Convert to LAB color space for better contrast enhancement
+    if len(img_array.shape) == 3:
+        lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
+        l, a, b = cv2.split(lab)
+        
+        # Apply CLAHE to L channel
+        clahe = cv2.createCLAHE(clipLimit=factor, tileGridSize=(8,8))
+        l_enhanced = clahe.apply(l)
+        
+        # Merge channels and convert back to RGB
+        lab_enhanced = cv2.merge([l_enhanced, a, b])
+        enhanced = cv2.cvtColor(lab_enhanced, cv2.COLOR_LAB2RGB)
+    else:
+        # For grayscale images
+        clahe = cv2.createCLAHE(clipLimit=factor, tileGridSize=(8,8))
+        enhanced = clahe.apply(img_array)
+    
+    return enhanced
+
+def apply_texture_analysis(img: Union[Image.Image, np.ndarray, str],
+                         radius: int = 3,
+                         n_points: int = 8) -> np.ndarray:
+    """
+    Apply Local Binary Pattern for texture analysis.
+    
+    Args:
+        img (PIL.Image, numpy.ndarray, str): Input image
+        radius (int): Radius of the pattern
+        n_points (int): Number of points in the pattern
+    
+    Returns:
+        numpy.ndarray: Texture pattern image
+    """
+    pil_img = ensure_pil_image(img)
+    input_array = np.array(pil_img)
+    gray_img = sanitize_dimensional_image(pil_img)
+        
+    # Convert to uint8 before LBP computation
+    if gray_img.dtype.kind == 'f':
+        gray_img = (gray_img * 255).clip(0, 255).astype(np.uint8)
+    elif gray_img.dtype != np.uint8:
+        gray_img = gray_img.astype(np.uint8)
+    
+    # Apply LBP
+    lbp = local_binary_pattern(gray_img, n_points, radius, method='uniform')
+    
+    # Normalize to 0-255 range
+    lbp_normalized = ((lbp - lbp.min()) * (255.0 / (lbp.max() - lbp.min()))).astype(np.uint8)
+    
+    # If the input was a 3D array, maintain the shape for consistency
+    if input_array.ndim == 3:
+        return lbp_normalized[..., np.newaxis]
+    
+    return lbp_normalized
+
+def apply_adaptive_threshold(img: Union[Image.Image, np.ndarray, str],
+                           block_size: int = 11,
+                           c: int = 2) -> np.ndarray:
+    """
+    Apply adaptive thresholding for improved edge detection.
+    
+    Args:
+        img (PIL.Image, numpy.ndarray, str): Input image
+        block_size (int): Size of pixel neighborhood (must be odd)
+        c (int): Constant subtracted from mean
+    
+    Returns:
+        numpy.ndarray: Thresholded image
+    """
+    if (block_size <= 0 or block_size%2==0):
+        raise ValueError
+    pil_img = ensure_pil_image(img)
+    input_array = np.array(pil_img)
+    gray_img = sanitize_dimensional_image(pil_img)
+    
+    # Ensure block_size is odd
+    block_size = block_size if block_size % 2 == 1 else block_size + 1
+    
+    # Apply adaptive threshold
+    thresh = cv2.adaptiveThreshold(
+        gray_img,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        block_size,
+        c
+    )
+
+    if input_array.ndim == 3:
+        return thresh[..., np.newaxis]
+
+    return thresh
+
+def apply_sharpening(img: Union[Image.Image, np.ndarray, str],
+                    strength: float = 1.0) -> np.ndarray:
+    """
+    Sharpen the image using unsharp masking.
+    
+    Args:
+        img (PIL.Image, numpy.ndarray, str): Input image
+        strength (float): Sharpening strength factor
+    
+    Returns:
+        numpy.ndarray: Sharpened image
+    """
+    pil_img = ensure_pil_image(img)
+    img_array = np.array(pil_img)
+    
+    # Create blurred version
+    blurred = gaussian_filter(img_array, sigma=2)
+    
+    # Calculate unsharp mask
+    unsharp_mask = img_array - blurred
+    
+    # Apply sharpening
+    sharpened = img_array + strength * unsharp_mask
+    
+    # Clip values to valid range
+    return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 def ensure_pil_image(img: Union[Image.Image, np.ndarray, str]) -> Image.Image:
     """
@@ -143,6 +311,9 @@ def apply_saturation(img: Union[Image.Image, np.ndarray, str],
     Raises:
         ValueError: If saturation level is invalid
     """
+    if(saturation_level < 0):
+        raise ValueError
+
     # Ensure input is a PIL Image
     pil_img = ensure_pil_image(img)
     
@@ -194,3 +365,22 @@ def apply_edge_detection(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray
     
     # Convert back to numpy array
     return np.array(edge_pil)
+
+
+def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
+    input_array = np.array(pil_img)
+
+    # Convert to grayscale
+    if input_array.ndim == 3:
+        if input_array.shape[2] == 3 or input_array.shape[2] == 4:
+            # Convert RGB/RGBA to grayscale
+            gray_img = np.array(pil_img.convert('L'))
+        else:
+            # Handle other 3D arrays (like multi-channel images)
+            gray_img = np.mean(input_array, axis=2)
+    else:
+        # Already grayscale
+        gray_img = input_array
+
+    return gray_img
+

@@ -3,6 +3,7 @@ Napari Plugin Configuration and Widget
 
 This module sets up the Napari plugin interface for image filtering.
 """
+import pdb
 import napari
 import numpy as np
 from qtpy.QtWidgets import (
@@ -13,7 +14,10 @@ from qtpy.QtCore import Qt
 from PIL import Image
 from .napari_image_filters import (
     apply_grayscale, apply_saturation, 
-    apply_edge_enhance, apply_edge_detection
+    apply_edge_enhance, apply_edge_detection,
+    apply_gaussian_blur, apply_contrast_enhancement,
+    apply_texture_analysis, apply_adaptive_threshold,
+    apply_sharpening
 )
 
 class ImageFilterWidget(QWidget):
@@ -37,9 +41,24 @@ class ImageFilterWidget(QWidget):
         super().__init__()
         self.viewer = viewer
         self.original_data = None
+        # History stack for undo functionality
+        self.history_stack = []
+        self.max_history = 20  # Maximum number of undo steps
 
         # Create main layout
         layout = QVBoxLayout()
+
+        # Add button layout at the top
+        button_layout = QHBoxLayout()
+        
+        # Add Undo button
+        self.undo_button = QPushButton("Undo")
+        self.undo_button.clicked.connect(self._undo_last_change)
+        self.undo_button.setEnabled(False)  # Disabled initially
+        button_layout.addWidget(self.undo_button)
+        
+        # Add layout to main layout
+        layout.addLayout(button_layout)
         
         # Saturation slider
         sat_layout = QHBoxLayout()
@@ -57,7 +76,12 @@ class ImageFilterWidget(QWidget):
         filter_buttons = [
             ("Grayscale", self._apply_grayscale),
             ("Edge Enhance", self._apply_edge_enhance),
-            ("Edge Detection", self._apply_edge_detection)
+            ("Edge Detection", self._apply_edge_detection),
+            ("Gaussian Blur", self._apply_gaussian_blur),
+            ("Contrast Enhance", self._apply_contrast_enhancement),
+            ("Texture Analysis", self._apply_texture_analysis),
+            ("Adaptive Threshold", self._apply_adaptive_threshold),
+            ("Sharpen", self._apply_sharpening)
         ]
         
         for name, method in filter_buttons:
@@ -82,6 +106,7 @@ class ImageFilterWidget(QWidget):
         
         # Check if any layers are selected
         if not selected_layers:
+            # pdb.set_trace()
             raise ValueError("Please select an image layer")
         
         # Find the first image layer
@@ -106,8 +131,46 @@ class ImageFilterWidget(QWidget):
         sat_value = value / 100.0
         self.sat_label.setText(f"Saturation: {sat_value:.2f}")
         self._apply_saturation()
-    
-    def _apply_filter(self, filter_func, reset = False):
+
+
+    def _push_to_history(self, layer):
+        """
+        Push current image state to history stack.
+        
+        Args:
+            layer (napari.layers.Image): Current image layer
+        """
+        if len(self.history_stack) >= self.max_history:
+            # Remove oldest history item if we exceed max history
+            self.history_stack.pop(0)
+        
+        # Store a copy of the current state
+        self.history_stack.append(layer.data.copy())
+        
+        # Enable undo button when we have history
+        self.undo_button.setEnabled(True)
+
+    def _undo_last_change(self):
+        """
+        Undo the last change by restoring the previous state.
+        """
+        try:
+            layer = self._get_current_layer()
+            
+            if self.history_stack:
+                # Restore the previous state
+                layer.data = self.history_stack.pop()
+                
+                # Disable undo button if no more history
+                if not self.history_stack:
+                    self.undo_button.setEnabled(False)
+            
+        except Exception as e:
+            print(f"Error undoing last change: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _apply_filter(self, filter_func, reset=False):
         """
         Apply a filter to the current image layer.
 
@@ -119,10 +182,13 @@ class ImageFilterWidget(QWidget):
             # Get current layer
             layer = self._get_current_layer()
             
+            # Store current state in history before applying filter
+            self._push_to_history(layer)
+            
             # Handle multi-dimensional image data
             original_data = layer.data
             
-            if  filter_func in [apply_edge_enhance, apply_edge_detection]:
+            if filter_func in [apply_edge_enhance, apply_edge_detection]:
                 # Create a list to store filtered slices
                 filtered_slices = []
                 
@@ -166,7 +232,7 @@ class ImageFilterWidget(QWidget):
             print(f"Error applying filter: {e}")
             import traceback
             traceback.print_exc()
-
+    
     def _apply_saturation(self):
         """Apply saturation adjustment to current layer."""
         sat_value = self.sat_slider.value() / 100.0
@@ -184,6 +250,32 @@ class ImageFilterWidget(QWidget):
     def _apply_edge_detection(self):
         """Apply edge detection to current layer."""
         self._apply_filter(apply_edge_detection)
+
+    def _apply_gaussian_blur(self):
+        """Apply Gaussian blur to the current image"""
+        self._apply_filter(apply_gaussian_blur)
+
+    def _apply_contrast_enhancement(self):
+        """Apply contrast enhancement to the current image"""
+        self._apply_filter(apply_gaussian_blur)
+        try:
+            layer = self._get_current_layer()
+            result = apply_contrast_enhancement(layer.data, factor=1.5)
+            layer.data = result
+        except Exception as e:
+            print(f"Error applying contrast enhancement: {str(e)}")
+
+    def _apply_texture_analysis(self):
+        """Apply texture analysis to the current image"""
+        self._apply_filter(apply_texture_analysis)
+
+    def _apply_adaptive_threshold(self):
+        """Apply adaptive threshold to the current image"""
+        self._apply_filter(apply_adaptive_threshold)
+
+    def _apply_sharpening(self):
+        """Apply sharpening to the current image"""
+        self._apply_filter(apply_sharpening)
 
 def napari_experimental_provide_dock_widget():
     """
