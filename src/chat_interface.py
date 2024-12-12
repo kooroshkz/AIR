@@ -3,6 +3,10 @@ from qtpy.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QPushButton, QLineEd
 from openai import OpenAI
 import numpy as np
 from .napari_image_filters import (
+    apply_grayscale,
+    apply_saturation,
+    apply_edge_enhance,
+    apply_edge_detection,
     apply_gaussian_blur,
     apply_contrast_enhancement,
     apply_texture_analysis,
@@ -26,10 +30,10 @@ class ChatWidget(QWidget):
         self.filter_widget = filter_widget  # Store reference to ImageFilterWidget
         self.setup_ui()
         self.available_commands = {
-            "grayscale": self.filter_widget._apply_grayscale,
-            "saturation": self.filter_widget._update_saturation,
-            "edge_enhance": self.filter_widget._apply_edge_enhance,
-            "edge_detection": self.filter_widget._apply_edge_detection,
+            "grayscale": apply_grayscale,
+            "saturation": apply_saturation,
+            "edge_enhance": apply_edge_enhance,
+            "edge_detection": apply_edge_detection,
             "blur": apply_gaussian_blur,
             "contrast": apply_contrast_enhancement,
             "texture": apply_texture_analysis,
@@ -156,20 +160,6 @@ class ChatWidget(QWidget):
         layer = self.filter_widget._get_current_layer()
         img = self.filter_widget.original_data.copy()
 
-        if "saturation" in command:
-            try:
-                value = int(command.split()[-1])
-                filtered_array = self.available_commands["saturation"](value)
-                self.change_layer(layer, filtered_array)
-                self.add_to_chat(f"Executed: saturation with value {value}")
-                return
-            except (IndexError, ValueError) as e:
-                print(e)
-                self.filter_widget.add_to_chat(
-                    "Error: Saturation requires a numeric value between 0-200"
-                )
-                return
-
         # Handle commands with parameters
         if len(parts) > 1:
             try:
@@ -194,7 +184,7 @@ class ChatWidget(QWidget):
                 self.filter_widget._push_to_history(layer)
                 return
             except Exception as e:
-                self.filter_widget.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
+                self.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
                 return
 
         self.add_to_chat("I did not quite catch that one.")
