@@ -1,8 +1,8 @@
-name: Python Code Quality
+name: Python Code Quality and Tests
 on: [push]
 
 jobs:
-  lint:
+  lint-and-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,7 +19,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint autopep8
+        pip install pylint autopep8 pytest
+        pip install -e .[dev]  # Install package in editable mode with dev dependencies
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     
     - name: Check for Python files
@@ -46,7 +47,11 @@ jobs:
       run: |
         pylint --fail-under=7.0 ${{ steps.check-py-files.outputs.files }}
       continue-on-error: true
-    
+
+    - name: Run tests with pytest
+      run: |
+        pytest tests/ -v
+
     - name: Commit changes
       if: steps.check-py-files.outputs.has_py_files == 'true'
       run: |

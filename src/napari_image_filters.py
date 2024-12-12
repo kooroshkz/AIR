@@ -87,8 +87,12 @@ def apply_grayscale(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     # Convert back to numpy array
     grayscale_array = np.array(grayscale_pil)
 
-    # Return a 3D array for consistency
-    return grayscale_array[:, :, np.newaxis]
+    # If the input was a 3D array, maintain the 3D shape for consistency
+    if isinstance(img, np.ndarray) and img.ndim == 3:
+        return grayscale_array[:, :, np.newaxis]
+    
+    # Otherwise return the 2D array
+    return grayscale_array
 
 def apply_crop(img: Union[Image.Image, np.ndarray, str], 
                corners: Tuple[int, int, int, int]) -> np.ndarray:
