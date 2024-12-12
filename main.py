@@ -1,15 +1,14 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
-
+from dotenv import load_dotenv
 import napari
 from src.napari_image_filtering_interface import napari_experimental_provide_dock_widget
+
 
 def main():
     """ 
     Main entry point to launch Napari 
     """
+    # Initialize .env
+    load_dotenv()
     # Create a new Napari viewer
     viewer = napari.Viewer()
     

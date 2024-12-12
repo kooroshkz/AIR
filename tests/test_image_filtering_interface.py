@@ -7,8 +7,7 @@ covering UI interactions and filter applications.
 import os
 import pytest
 import numpy as np
-from unittest.mock import MagicMock, patch, PropertyMock
-from qtpy.QtCore import Qt
+from unittest.mock import MagicMock, PropertyMock
 from napari.layers import Image
 import napari
 from qtpy.QtWidgets import QApplication, QPushButton

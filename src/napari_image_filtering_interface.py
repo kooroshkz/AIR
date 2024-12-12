@@ -3,7 +3,6 @@ Napari Plugin Configuration and Widget
 
 This module sets up the Napari plugin interface for image filtering.
 """
-import pdb
 import napari
 import numpy as np
 from qtpy.QtWidgets import (
@@ -11,13 +10,16 @@ from qtpy.QtWidgets import (
     QLabel, QSlider, QHBoxLayout
 )
 from qtpy.QtCore import Qt
-from PIL import Image
 from .napari_image_filters import (
     apply_grayscale, apply_saturation, 
     apply_edge_enhance, apply_edge_detection,
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
     apply_sharpening
+)
+
+from .chat_interface import (
+    ChatWidget
 )
 
 class ImageFilterWidget(QWidget):
@@ -88,6 +90,10 @@ class ImageFilterWidget(QWidget):
             btn = QPushButton(name)
             btn.clicked.connect(method)
             layout.addWidget(btn)
+
+        # Initialize the AI view
+        self.chat_widget = ChatWidget(viewer, self)
+        layout.addWidget(self.chat_widget)
         
         self.setLayout(layout)
     
@@ -192,7 +198,7 @@ class ImageFilterWidget(QWidget):
                 # Create a list to store filtered slices
                 filtered_slices = []
                 
-                # Iterate through the first dimension (e.g., time or z-stack)
+                # Iterate through the first dimension
                 for i in range(original_data.shape[0]):
                     # Apply filter to each 2D slice
                     slice_data = original_data[i]
@@ -257,13 +263,7 @@ class ImageFilterWidget(QWidget):
 
     def _apply_contrast_enhancement(self):
         """Apply contrast enhancement to the current image"""
-        self._apply_filter(apply_gaussian_blur)
-        try:
-            layer = self._get_current_layer()
-            result = apply_contrast_enhancement(layer.data, factor=1.5)
-            layer.data = result
-        except Exception as e:
-            print(f"Error applying contrast enhancement: {str(e)}")
+        self._apply_filter(apply_contrast_enhancement)
 
     def _apply_texture_analysis(self):
         """Apply texture analysis to the current image"""
