@@ -40,6 +40,12 @@ source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 
 # Install development dependencies
 pip install -e .[dev]
+
+# Or if you want to install everything
+pip install -r requirements.txt
+
+# Setup .env 
+Copy the .env.example into .env and then paste in the required fields into that .env file.
 ```
 
 ### Running Tests
