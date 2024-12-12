@@ -16,7 +16,10 @@ setup(
             'pytest',
             'pytest-cov',
             'mypy',
-            'types-Pillow'
+            'types-Pillow',
+            'opencv-python',  
+            'scikit-image', 
+            'scipy'          
         ]
     },
     entry_points={

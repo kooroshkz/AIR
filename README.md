@@ -7,6 +7,11 @@ The Interactive Cell Segmentation Plugin for Napari allows biologists to control
 - Saturation Adjustment
 - Edge Enhancement
 - Edge Detection
+- Gaussian blur
+- Contrast enhance 
+- Texture analysis
+- Adaptive treshold
+- Image Sharpening
 
 ## Installation
 
