@@ -64,6 +64,8 @@ jobs:
       continue-on-error: true
 
     - name: Run tests with pytest
+      if: steps.check-py-files.outputs.has_py_files == 'true'
+      shell: bash
       run: |
         export QT_DEBUG_PLUGINS=1
         export DISPLAY=:99
