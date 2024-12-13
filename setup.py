@@ -22,6 +22,7 @@ setup(
         'dev': [
             'pytest',
             'pytest-cov',
+            'pytest-dotenv',
         ]
     },
     entry_points={
