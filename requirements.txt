@@ -3,7 +3,7 @@ napari[all]>=0.4.16
 numpy>=1.20.0
 pillow>=8.0.0
 qtpy
-opencv-python-headless # Due to the CICD testing its necessary to use a opencv-python-headless server
+opencv-python
 scikit-image
 scipy
 openai

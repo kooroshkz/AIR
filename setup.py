@@ -12,7 +12,7 @@ setup(
         'qtpy',
         'mypy',
         'types-Pillow',
-        'opencv-python-headless',  
+        'opencv-python',  
         'scikit-image', 
         'scipy',
         'openai',
