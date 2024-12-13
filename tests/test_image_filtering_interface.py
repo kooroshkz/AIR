@@ -12,12 +12,10 @@ from napari.layers import Image
 import napari
 from qtpy.QtWidgets import QApplication, QPushButton
 from PIL import Image
-from dotenv import load_dotenv
 
 # Import the widget class
 from src.napari_image_filtering_interface import ImageFilterWidget
 
-load_dotenv()
 
 # Ensure QApplication exists
 @pytest.fixture(scope="session")
