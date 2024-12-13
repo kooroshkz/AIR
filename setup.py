@@ -6,13 +6,13 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=[
-        'napari',
-        'numpy',
-        'Pillow',
+        'napari[all]>=0.4.16',
+        'numpy>=1.20.0',
+        'pillow>=8.0.0',
         'qtpy',
         'mypy',
         'types-Pillow',
-        'opencv-python',  
+        'opencv-python-headless',  
         'scikit-image', 
         'scipy',
         'openai',
@@ -23,6 +23,10 @@ setup(
             'pytest',
             'pytest-cov',
             'pytest-dotenv',
+            'pytest-qt',
+            'pytest-benchmark',
+            'setuptools',
+            'wheel'
         ]
     },
     entry_points={
