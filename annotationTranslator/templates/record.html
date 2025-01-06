@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Recording Page{% endblock %}
+
+{% block content %}
+    <h1>AIR protocol converter</h1>
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    <button id="sendBtn" disabled>Generate Protocol</button>
+    <br><br>
+
+    <!-- Audio player -->
+    <div class="audio-container">
+        <audio id="audioPlayer" controls>
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <div class="transcriptions">
+        <div class="output-container">
+            <h2>Final Transcription</h2>
+            <pre id="output">Transcription</pre>
+        </div>
+
+        <div class="output-container">
+            <h2>Currently Hearing...</h2>
+            <pre id="interimOutput">Interim transcription</pre>
+        </div>
+
+    <div class="output-container">
+        <h2>Generated Protocol</h2>
+        <pre id="LLMoutput"></pre>
+    </div>
+        
+    </div>
+
+        
+    </div>
+
+    <p class="note">Click "Start Recording" to begin speaking</p>
+    <p class="note">This tool will not work on Firefox, and may not work on less common browsers</p>
+    <p class="note">It is recommended to use Google, but as long as your browser supports audio transcription with Web Speech API it will be fine</p>
+
+    <script src="{{ url_for('static', filename='AudioRecorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='TranscriptionEndpoint.js') }}"></script>
+{% endblock %}
