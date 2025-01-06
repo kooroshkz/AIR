@@ -22,3 +22,7 @@ pytest-benchmark  # For performance testing
 setuptools
 wheel
 
+#Annotation Translator Dependencies
+torch
+flask
+transformers
