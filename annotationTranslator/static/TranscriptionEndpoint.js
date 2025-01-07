@@ -22,7 +22,7 @@
       }
 
       if (finalTranscript !== lastFinalTranscript) {
-        document.getElementById("output").innerText += "\n" + finalTranscript; // Append final transcription
+        document.getElementById("output").innerText += `\n${finalTranscript}`; // Append final transcription
         lastFinalTranscript = finalTranscript; // Update last appended final transcription
       }
 
@@ -30,7 +30,7 @@
     };
 
     recognition.onerror = (event) => {
-      console.error("Error occurred: " + event.error);
+      console.error(`Error occurred: ${event.error}`);
     };
 
     // Start listening
@@ -63,12 +63,12 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
     LLMresponse = result["model-output"][0];
     
     console.log(LLMresponse);
-    document.getElementById("LLMoutput").innerText += '\n' + LLMresponse.generated_text;
+    document.getElementById("LLMoutput").innerText += `\n${LLMresponse.generated_text}`;
 
     if (response.ok) {
         alert('Audio uploaded successfully!');
     } else {
-        alert('Error uploading audio: ' + result.error);
+        alert(`Error uploading audio: ${result.error}`);
     }
 });
 
