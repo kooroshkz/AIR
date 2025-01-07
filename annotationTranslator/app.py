@@ -62,7 +62,7 @@ def upload_transcription():
     text = data.get("text", "")
 
     payload = {
-        "inputs": text,
+        "inputs": "you are a biology specialist who will convert the following sentence into a bullet point list summarizing the observations." + text,
     }
 
     response = requests.post(API_URL, headers=headers, json=payload)
