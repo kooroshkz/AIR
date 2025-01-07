@@ -93,6 +93,13 @@
         </div>
     </div>
 
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="uploadImage()">Upload</button>
+    <img id="preview" style="max-width: 300px; display: none;">
+
+<p id="status"></p>
+
+
 </div>
 
     <script src="{{ url_for('static', filename='handlers.js') }}"></script>
