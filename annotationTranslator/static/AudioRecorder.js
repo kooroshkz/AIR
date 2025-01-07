@@ -52,7 +52,7 @@ stopBtn.addEventListener("click", () => {
 	stopBtn.disabled = true;
 });
 
-// Send the recorded audio to the server when the "Send Audio" button is pressed
+//Send the recorded audio to the server when the "Send Audio" button is pressed
 sendBtn.addEventListener("click", async () => {
 	const formData = new FormData();
 	currentDate = getTimestampFilename();
@@ -69,6 +69,6 @@ sendBtn.addEventListener("click", async () => {
 	if (response.ok) {
 		alert("Audio uploaded successfully!");
 	} else {
-		alert("Error uploading audio: " + result.error);
+		alert(`Error uploading audio: ${result.error}`);
 	}
 });
