@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 import os
 from app_utils import *
+import time
 
 # from transformers import pipeline
 import requests
@@ -10,7 +11,9 @@ app = Flask(__name__)
 #set up uploads folder (where audio files get stored)
 upload_folder = "uploads"
 app.config["upload_folder"] = upload_folder
+app.config['UPLOAD_FOLDER'] = 'image_uploads'
 os.makedirs(upload_folder, exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok = True)
 
 
 #Hugging face API key
@@ -83,3 +86,26 @@ def upload_transcription():
             "model-output": response_clean,
         }
     )
+
+@app.post("/upload-image")
+def upload_image():
+
+    if ('image' not in request.files):
+        return redirect(request.url)
+
+    file = request.files['image']
+
+    if (not allowed_filename(file.filename)):
+        return redirect(request.url)
+
+    file.filename = str(time.time())
+
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+    file.save(file_path)
+
+    
+
+    return jsonify({
+        "status" : "success",
+    })
