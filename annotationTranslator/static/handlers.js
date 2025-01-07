@@ -9,6 +9,7 @@ const stopBtn = document.getElementById("stopBtn");
 const sendBtn = document.getElementById("sendBtn");
 const outputBox = document.getElementById("output")
 const interimBox = document.getElementById("interimOutput")
+const imageBtn = document.getElementById("imageInput")
 
 // Initialize Speech Recognition
 const recognition = new (
@@ -145,6 +146,43 @@ async function sendHandler() {
 	}
 }
 
+async function uploadImage() {
+  const file = document.getElementById('imageInput').files[0];
+  
+  if (!file) {
+    alert("Please select an image.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    // Make the POST request and await the response
+    const response = await fetch("/upload-image", {
+      method: "POST",
+      body: formData
+    });
+
+    // Check if the response is okay (status 200-299)
+    if (!response.ok) {
+      throw new Error("Failed to upload image");
+    }
+
+    // Parse the JSON response and await it
+    const data = await response.json();
+
+    // Handle the successful upload
+    console.log('Image uploaded successfully:', data);
+    document.getElementById("status").innerText = `Image uploaded! URL: ${data.imageUrl}`;
+
+  } catch (error) {
+    // Catch and handle errors
+    console.error('Error:', error);
+    document.getElementById("status").innerText = 'Upload failed. Please try again.';
+  }
+}
+
 // Start recording when the "Start Recording" button is pressed
 startBtn.addEventListener("click", startHandler);
 
@@ -153,3 +191,18 @@ stopBtn.addEventListener("click", stopHandler);
 
 // Send the recorded audio to the server when the "Send Audio" button is pressed
 sendBtn.addEventListener("click", sendHandler);
+
+imageBtn.addEventListener("change", (event) => {
+
+    const file = event.target.files[0];
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imgPreview = document.getElementById("preview");
+            imgPreview.src = e.target.result;
+            imgPreview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+});
