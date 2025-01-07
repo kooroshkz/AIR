@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
-from transformers import pipeline
+#from transformers import pipeline
+import requests
 
 app = Flask(__name__)
 
@@ -8,8 +9,8 @@ upload_folder = "uploads"
 app.config["upload_folder"] = upload_folder
 os.makedirs(upload_folder, exist_ok=True)
 
-pipe = pipeline(model="facebook/blenderbot-400M-distill")
-
+API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
+headers = {"Authorization": "Bearer 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"}
 
 @app.route("/")
 def home():
@@ -43,14 +44,20 @@ def upload_transcription():
 
     data = request.get_json()
     text = data.get("text", "")
-    output = pipe(text)
+
+    payload = {
+        "inputs": text,
+    }
+
+    response = requests.post(API_URL, headers=headers, json = payload) 
 
     print(f"Received text: {text}")
-    print(f"model output: {output}")
+    print(f"model output: {response.json()}")
+
 
     return jsonify(
         {
             "status": "success",
-            "model-output": output,
+            "model-output": response.json(),
         }
     )
