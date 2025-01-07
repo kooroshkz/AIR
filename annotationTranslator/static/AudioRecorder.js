@@ -53,22 +53,22 @@ stopBtn.addEventListener("click", () => {
 });
 
 //Send the recorded audio to the server when the "Send Audio" button is pressed
-sendBtn.addEventListener("click", async () => {
-	const formData = new FormData();
-	currentDate = getTimestampFilename();
-	formData.append("audio", audioBlob, currentDate);
-
-	// Send the audio file via POST request
-	const response = await fetch("/upload-audio", {
-		method: "POST",
-		body: formData,
-	});
-
-	const result = await response.json();
-
-	if (response.ok) {
-		alert("Audio uploaded successfully!");
-	} else {
-		alert(`Error uploading audio: ${result.error}`);
-	}
-});
+// sendBtn.addEventListener("click", async () => {
+// 	const formData = new FormData();
+// 	currentDate = getTimestampFilename();
+// 	formData.append("audio", audioBlob, currentDate);
+//
+// 	// Send the audio file via POST request
+// 	const response = await fetch("/upload-audio", {
+// 		method: "POST",
+// 		body: formData,
+// 	});
+//
+// 	const result = await response.json();
+//
+// 	if (response.ok) {
+// 		alert("Audio uploaded successfully!");
+// 	} else {
+// 		alert(`Error uploading audio: ${result.error}`);
+// 	}
+// });

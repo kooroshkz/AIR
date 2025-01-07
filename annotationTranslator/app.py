@@ -15,7 +15,7 @@ os.makedirs(upload_folder, exist_ok=True)
 
 #Hugging face API key
 API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
-headers = {"Authorization": "Bearer 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"}
+headers = {"Authorization": "Bearer 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"}
 
 
 """ 
@@ -68,6 +68,9 @@ def upload_transcription():
     response = requests.post(API_URL, headers=headers, json=payload)
 
     model_output = response_to_output_raw(response)
+
+    if (type(model_output) == dict):
+        raise ValueError(f"Error: unrecognized return from LLM: {model_output}")
 
     #clean the response to return
     response_clean = response.json()
