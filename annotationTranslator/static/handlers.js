@@ -7,9 +7,9 @@ const audioPlayer = document.getElementById("audioPlayer");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const sendBtn = document.getElementById("sendBtn");
-const outputBox = document.getElementById("output")
-const interimBox = document.getElementById("interimOutput")
-const imageBtn = document.getElementById("imageInput")
+const outputBox = document.getElementById("output");
+const interimBox = document.getElementById("interimOutput");
+const imageBtn = document.getElementById("imageInput");
 
 // Initialize Speech Recognition
 const recognition = new (
@@ -47,8 +47,6 @@ recognition.onerror = (event) => {
 	console.error(`Error occurred: ${event.error}`);
 };
 
-
-
 function getTimestampFilename(prefix = "upload", extension = "") {
 	const now = new Date();
 	const timestamp = now
@@ -59,7 +57,6 @@ function getTimestampFilename(prefix = "upload", extension = "") {
 }
 
 async function startHandler() {
-  
 	recognition.start();
 	console.log("Recognition started.");
 
@@ -90,10 +87,7 @@ async function startHandler() {
 	stopBtn.disabled = false;
 }
 
-
-
 function stopHandler() {
-
 	recognition.stop();
 	console.log("Recognition stopped.");
 
@@ -104,83 +98,86 @@ function stopHandler() {
 
 async function sendHandler() {
 	const formData = new FormData();
+
 	currentDate = getTimestampFilename();
 	formData.append("audio", audioBlob, currentDate);
 
-	// Send the audio file via POST request
-	const response = await fetch("/upload-audio", {
-		method: "POST",
-		body: formData,
-	});
+	const [audioResponse, textResponse] = await Promise.all([
+		fetch("/upload-audio", {
+			method: "POST",
+			body: formData,
+		}),
+		fetch("/upload-transcription", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				text: document.getElementById("output").innertext,
+			}),
+		}),
+	]);
 
-	const result = await response.json();
 
-	if (response.ok) {
+	const audioResult = await audioResponse.json();
+	const llmResult = await textResponse.json();
+
+	if (audioResponse.ok) {
 		alert("Audio uploaded successfully!");
 	} else {
-		alert(`Error uploading audio: ${result.error}`);
+		alert(`Error uploading audio: ${audioResponse.error}`);
 	}
 
-// Send the audio file via POST request
-	const transcriptionResponse = await fetch("/upload-transcription", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({ text: document.getElementById("output").innerText }),
-	});
-
-	const TranscriptionResult = await transcriptionResponse.json();
+	if (textResponse.ok) {
+		alert("Transcription uploaded successfully!");
+	} else {
+		alert(`Error uploading Transcription:  ${testResponse.error}`);
+	}
 
 	//NOTE: result["model-output"] is a list containing JSON, not the JSON object itself
-	LLMresponse = TranscriptionResult["model-output"][0];
+	llmResponse = llmResult["model-output"][0];
 
-	console.log(LLMresponse);
+	console.log(llmResponse);
 	document.getElementById("LLMoutput").innerText +=
-		`\n${LLMresponse.generated_text}`;
-
-	if (transcriptionResponse.ok) {
-		alert("Audio uploaded successfully!");
-	} else {
-		alert(`Error uploading audio: ${result.error}`);
-	}
+		`\n${llmResponse.generated_text}`;
 }
 
 async function uploadImage() {
-  const file = document.getElementById('imageInput').files[0];
-  
-  if (!file) {
-    alert("Please select an image.");
-    return;
-  }
+	const file = document.getElementById("imageInput").files[0];
 
-  const formData = new FormData();
-  formData.append("image", file);
+	if (!file) {
+		alert("Please select an image.");
+		return;
+	}
 
-  try {
-    // Make the POST request and await the response
-    const response = await fetch("/upload-image", {
-      method: "POST",
-      body: formData
-    });
+	const formData = new FormData();
+	formData.append("image", file);
 
-    // Check if the response is okay (status 200-299)
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
-    }
+	try {
+		// Make the POST request and await the response
+		const response = await fetch("/upload-image", {
+			method: "POST",
+			body: formData,
+		});
 
-    // Parse the JSON response and await it
-    const data = await response.json();
+		// Check if the response is okay (status 200-299)
+		if (!response.ok) {
+			throw new Error("Failed to upload image");
+		}
 
-    // Handle the successful upload
-    console.log('Image uploaded successfully:', data);
-    document.getElementById("status").innerText = `Image uploaded! URL: ${data.imageUrl}`;
+		// Parse the JSON response and await it
+		const data = await response.json();
 
-  } catch (error) {
-    // Catch and handle errors
-    console.error('Error:', error);
-    document.getElementById("status").innerText = 'Upload failed. Please try again.';
-  }
+		// Handle the successful upload
+		console.log("Image uploaded successfully:", data);
+		document.getElementById("status").innerText =
+			`Image uploaded! URL: ${data.imageUrl}`;
+	} catch (error) {
+		// Catch and handle errors
+		console.error("Error:", error);
+		document.getElementById("status").innerText =
+			"Upload failed. Please try again.";
+	}
 }
 
 // Start recording when the "Start Recording" button is pressed
@@ -193,16 +190,15 @@ stopBtn.addEventListener("click", stopHandler);
 sendBtn.addEventListener("click", sendHandler);
 
 imageBtn.addEventListener("change", (event) => {
+	const file = event.target.files[0];
 
-    const file = event.target.files[0];
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const imgPreview = document.getElementById("preview");
-            imgPreview.src = e.target.result;
-            imgPreview.style.display = "block";
-        };
-        reader.readAsDataURL(file);
-    }
+	if (file) {
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const imgPreview = document.getElementById("preview");
+			imgPreview.src = e.target.result;
+			imgPreview.style.display = "block";
+		};
+		reader.readAsDataURL(file);
+	}
 });

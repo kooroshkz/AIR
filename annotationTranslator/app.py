@@ -50,7 +50,7 @@ def upload_audio():
 
     return jsonify(
         {
-            "status": "success",
+            "status": "ok",
         }
     )
 
