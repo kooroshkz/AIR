@@ -1,112 +1,44 @@
 from flask import Flask, render_template, request, jsonify, redirect
 import os
 from app_utils import *
-import time
-import random
-
-# from transformers import pipeline
-import requests
 
 app = Flask(__name__)
 
-#set up uploads folder (where audio files get stored)
-upload_folder = "uploads"
-app.config["upload_folder"] = upload_folder
-app.config['UPLOAD_FOLDER'] = 'image_uploads'
-os.makedirs(upload_folder, exist_ok=True)
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok = True)
+# set up uploads folder (where audio files get stored)
+app.config["UPLOAD_FOLDER"] = "uploads"
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
-#Hugging face API key
-API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
-headers = {"Authorization": "Bearer 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"}
-
-
-""" 
-/ is the first page where users get sent to
-    for now it is temporary, it is only here for in case any extra functionalities need to get added
-"""
 @app.route("/")
 def home():
     return render_template("base.html")
 
-"""
-record() handles the actual recording HTML page
-"""
 @app.route("/record")
 def record():
     return render_template("record.html")
 
+@app.post("/upload-data")
+def upload_data():
 
-"""
-handles the audio file uploaded by the user
--note: first the server recieves audio, then transcription, then image. Order matters!
-"""
-@app.post("/upload-audio")
-def upload_audio():
-
-    # save the file
+    transcription_result = request.form.get('text')
     audio_file = request.files["audio"]
+    image_file = request.files["image"]
 
-    os.makedirs(f"uploads/{random.randint(1, 10000)}/", exist_ok=False)
+    file_path = build_data_dirs(upload_dir = app.config["UPLOAD_FOLDER"])
+
+    audio_file_path = os.path.join(file_path, str(audio_file.filename))
+    image_file_path = os.path.join(file_path, str(image_file.filename))
+
+    audio_file.save(audio_file_path)
+    image_file.save(image_file_path)
+
+    print("generating model response")
+    annotation = get_model_response(transcription_result)
+    print(annotation)
 
     return jsonify(
         {
             "status": "ok",
+            "model-output": annotation,
         }
     )
-
-"""
-handles the model and returns its response
-"""
-@app.post("/upload-transcription")
-def upload_transcription():
-
-    data = request.get_json()
-    text = data.get("text", "")
-
-    payload = {
-        "inputs": "you are a biology specialist who will convert the following sentence into a bullet point list summarizing the observations." + text,
-    }
-
-    response = requests.post(API_URL, headers=headers, json=payload)
-
-    model_output = response_to_output_raw(response)
-
-    if (type(model_output) == dict):
-        raise ValueError(f"Error: unrecognized return from LLM: {model_output}")
-
-    #clean the response to return
-    response_clean = response.json()
-    response_clean[0]["generated_text"] = clean_response(model_output, text)
-
-    return jsonify(
-        {
-            "status": "success",
-            # model-output wants the json (not decoded), the decoding happens on the client-side
-            "model-output": response_clean,
-        }
-    )
-
-@app.post("/upload-image")
-def upload_image():
-
-    if ('image' not in request.files):
-        return redirect(request.url)
-
-    file = request.files['image']
-
-    if (not allowed_filename(file.filename)):
-        return redirect(request.url)
-
-    file.filename = str(time.time())
-
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-
-    file.save(file_path)
-
-    
-
-    return jsonify({
-        "status" : "success",
-    })

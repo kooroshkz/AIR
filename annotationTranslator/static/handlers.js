@@ -105,55 +105,27 @@ async function sendHandler() {
 	}
 
 	const formData = new FormData();
-	const imageFormData = new FormData();
 
 	currentDate = getTimestampFilename();
 	formData.append("audio", audioBlob, currentDate);
-	imageFormData.append("image", imageFile);
+	formData.append("image", imageFile);
+	formData.append("text", outputBox.innerText);
 
-	const [audioResponse, textResponse, imageResponse] = await Promise.all([
-		fetch("/upload-audio", {
-			method: "POST",
-			body: formData,
-		}),
-		fetch("/upload-transcription", {
-			method: "POST",
-			headers: {
-				"content-type": "application/json",
-			},
-			body: JSON.stringify({
-				text: outputBox.innerText,
-			}),
-		}),
-		fetch("/upload-image", {
-			method: "POST",
-			body: imageFormData,
-		}),
-	]);
+  const serverResponse = await fetch("/upload-data", {
+    method: "POST",
+    body: formData
+  })
 
-	const audioResult = await audioResponse.json();
-	const llmResult = await textResponse.json();
+	const submissionResult = await serverResponse.json();
 
-	if (audioResponse.ok) {
-		alert("Audio uploaded successfully!");
-	} else {
-		alert(`Error uploading audio: ${audioResponse.error}`);
-	}
+  console.log(submissionResult);
 
-	if (textResponse.ok) {
-		alert("Transcription uploaded successfully!");
-	} else {
-		alert(`Error uploading Transcription:  ${testResponse.error}`);
-	}
-
-	if (imageResponse.ok) {
-		alert("Image uploaded successfully!");
-	} else {
-		alert(`Error uploading Image: ${testResponse.error}`);
-	}
+  if (serverResponse.ok) {
+    alert("OK");
+  }
 
 	//NOTE: result["model-output"] is a list containing JSON, not the JSON object itself
-	llmResponse = llmResult["model-output"][0];
+	llmResponse = submissionResult["model-output"][0];
 
 	console.log(llmResponse);
 	document.getElementById("LLMoutput").innerText +=
