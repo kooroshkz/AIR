@@ -97,12 +97,21 @@ function stopHandler() {
 }
 
 async function sendHandler() {
+	const imageFile = document.getElementById("imageInput").files[0];
+
+	if (!imageFile) {
+		alert("Please select an image.");
+		return;
+	}
+
 	const formData = new FormData();
+	const imageFormData = new FormData();
 
 	currentDate = getTimestampFilename();
 	formData.append("audio", audioBlob, currentDate);
+	imageFormData.append("image", imageFile);
 
-	const [audioResponse, textResponse] = await Promise.all([
+	const [audioResponse, textResponse, imageResponse] = await Promise.all([
 		fetch("/upload-audio", {
 			method: "POST",
 			body: formData,
@@ -113,11 +122,14 @@ async function sendHandler() {
 				"content-type": "application/json",
 			},
 			body: JSON.stringify({
-				text: document.getElementById("output").innertext,
+				text: outputBox.innerText,
 			}),
 		}),
+		fetch("/upload-image", {
+			method: "POST",
+			body: imageFormData,
+		}),
 	]);
-
 
 	const audioResult = await audioResponse.json();
 	const llmResult = await textResponse.json();
@@ -134,50 +146,21 @@ async function sendHandler() {
 		alert(`Error uploading Transcription:  ${testResponse.error}`);
 	}
 
+	if (imageResponse.ok) {
+		alert("Image uploaded successfully!");
+	} else {
+		alert(`Error uploading Image: ${testResponse.error}`);
+	}
+
 	//NOTE: result["model-output"] is a list containing JSON, not the JSON object itself
 	llmResponse = llmResult["model-output"][0];
 
 	console.log(llmResponse);
 	document.getElementById("LLMoutput").innerText +=
 		`\n${llmResponse.generated_text}`;
-}
 
-async function uploadImage() {
-	const file = document.getElementById("imageInput").files[0];
-
-	if (!file) {
-		alert("Please select an image.");
-		return;
-	}
-
-	const formData = new FormData();
-	formData.append("image", file);
-
-	try {
-		// Make the POST request and await the response
-		const response = await fetch("/upload-image", {
-			method: "POST",
-			body: formData,
-		});
-
-		// Check if the response is okay (status 200-299)
-		if (!response.ok) {
-			throw new Error("Failed to upload image");
-		}
-
-		// Parse the JSON response and await it
-		const data = await response.json();
-
-		// Handle the successful upload
-		console.log("Image uploaded successfully:", data);
-		document.getElementById("status").innerText =
-			`Image uploaded! URL: ${data.imageUrl}`;
-	} catch (error) {
-		// Catch and handle errors
-		console.error("Error:", error);
-		document.getElementById("status").innerText =
-			"Upload failed. Please try again.";
-	}
+	document.getElementById("status").innerText =
+		"Image uploaded!";
 }
 
 // Start recording when the "Start Recording" button is pressed

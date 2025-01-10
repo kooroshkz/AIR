@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 import os
 from app_utils import *
 import time
+import random
 
 # from transformers import pipeline
 import requests
@@ -39,21 +40,21 @@ def record():
 
 """
 handles the audio file uploaded by the user
+-note: first the server recieves audio, then transcription, then image. Order matters!
 """
 @app.post("/upload-audio")
 def upload_audio():
 
     # save the file
-    result = request.files["audio"]
-    file_path = os.path.join(app.config["upload_folder"], result.filename)
-    result.save(file_path)
+    audio_file = request.files["audio"]
+
+    os.makedirs(f"uploads/{random.randint(1, 10000)}/", exist_ok=False)
 
     return jsonify(
         {
             "status": "ok",
         }
     )
-
 
 """
 handles the model and returns its response
