@@ -35,6 +35,10 @@ def upload_data():
     print("generating model response")
     annotation = get_model_response(transcription_result)
     print(annotation)
+    
+
+    with open(file_path + "/transcription.txt", "w") as f:
+        f.write(annotation[0]['generated_text'])
 
     return jsonify(
         {
