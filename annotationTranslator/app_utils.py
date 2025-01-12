@@ -1,7 +1,5 @@
 import requests
 import os
-import random
-import sqlite3
 
 # Hugging face API key
 API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
