@@ -1,6 +1,7 @@
 import requests
 import os
 import random
+import sqlite3
 
 # Hugging face API key
 API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
@@ -8,6 +9,9 @@ headers = {"Authorization": "Bearer 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"}
 
 allowed_extensions = {'png', 'jpg'}
 
+"""
+Collect the raw response of the huggingface model and conevrt it into text
+"""
 def response_to_output_raw(response : requests.models.Response) -> str | dict:
     # get the payload
     payload = response.json()
@@ -24,6 +28,9 @@ def response_to_output_raw(response : requests.models.Response) -> str | dict:
         return payload 
     
 
+"""
+Clean the model response for display, by removing the prompt which is automatically included in the LLMs output
+"""
 def clean_response(model_output, prompt):
 
     response = model_output.split("|||||")[1]
@@ -44,6 +51,9 @@ def allowed_filename(filename : str | None):
 
     return True
 
+"""
+Gets the model response + adds separator |||||
+"""
 def get_model_response(text):
 
     payload = {
@@ -62,11 +72,9 @@ def get_model_response(text):
 
     return response_clean 
 
-def build_data_dirs(upload_dir, id_num = None):
-    if id_num is None:
-        id_num = str(random.randint(1, 100000))
+def build_data_dirs(upload_dir : str, id_num : int):
     
-    file_path = os.path.join(upload_dir, id_num + "/")
+    file_path = os.path.join(upload_dir, str(id_num) + "/")
     os.makedirs(file_path)
 
     return file_path
