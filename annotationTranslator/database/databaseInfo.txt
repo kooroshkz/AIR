@@ -42,4 +42,78 @@ audio_format VARCHAR(50),
 FOREIGN KEY (image_id) REFERENCES images(image_id) ON DELETE CASCADE
 );
 
+------------------"RESET" SCRIPT (FOR DEV PURPOSES ONLY)------------------
+
+import sqlite3
+
+# Connect to SQLite database (or create it if it doesn't exist)
+conn = sqlite3.connect('example.db')
+cursor = conn.cursor()
+
+cursor.execute('DROP TABLE images;')
+cursor.execute('DROP TABLE annotations;')
+cursor.execute('DROP TABLE audio;')
+
+# Create the tables
+cursor.execute('''
+CREATE TABLE images(
+    image_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name VARCHAR(255) NOT NULL,
+    path TEXT NOT NULL,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+''')
+
+cursor.execute('''
+CREATE TABLE annotations(
+    annotation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_id INTEGER NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    path TEXT NOT NULL,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (image_id) REFERENCES images(image_id) ON DELETE CASCADE
+);
+''')
+
+cursor.execute('''
+CREATE TABLE audio(
+    audio_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_id INTEGER NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    path TEXT NOT NULL,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    transcription TEXT,
+    audio_format VARCHAR(50),
+    FOREIGN KEY (image_id) REFERENCES images(image_id) ON DELETE CASCADE
+);
+''')
+
+# Insert first entry into the 'images' table
+cursor.execute('''
+INSERT INTO images (file_name, path) 
+VALUES (?, ?);
+''', ('example_image.jpg', '/path/to/example_image.jpg'))
+
+# Get the image_id of the inserted image
+image_id = cursor.lastrowid
+
+# Insert first entry into the 'annotations' table
+cursor.execute('''
+INSERT INTO annotations (image_id, file_name, path) 
+VALUES (?, ?, ?);
+''', (image_id, 'example_annotation.json', '/path/to/example_annotation.json'))
+
+# Insert first entry into the 'audio' table
+cursor.execute('''
+INSERT INTO audio (image_id, file_name, path, transcription, audio_format) 
+VALUES (?, ?, ?, ?, ?);
+''', (image_id, 'example_audio.mp3', '/path/to/example_audio.mp3', 'Sample transcription text', 'mp3'))
+
+# Commit the changes and close the connection
+conn.commit()
+
+# Close the connection
+conn.close()
+
+print("Tables created and first entries inserted successfully.")
 
