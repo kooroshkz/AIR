@@ -160,7 +160,7 @@ annotationTranslator/models/*
 # Audio File uploads from server
 annotationTranslator/uploads/*
 annotationTranslator/image_uploads/*
-annotationTranslator/database/*
+annotationTranslator/database/database.db
 
 
 # PyCharm
