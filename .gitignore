@@ -160,6 +160,7 @@ annotationTranslator/models/*
 # Audio File uploads from server
 annotationTranslator/uploads/*
 annotationTranslator/image_uploads/*
+annotationTranslator/logs/*
 annotationTranslator/database/database.db
 
 
