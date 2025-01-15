@@ -124,12 +124,10 @@ async function sendHandler() {
     alert("OK");
   }
 
-	//NOTE: result["model-output"] is a list containing JSON, not the JSON object itself
-	llmResponse = submissionResult["model-output"][0];
+	llmResponse = submissionResult["model-output"];
 
-	console.log(llmResponse);
 	document.getElementById("LLMoutput").innerText +=
-		`\n${llmResponse.generated_text}`;
+		`\n${llmResponse}`;
 
 	document.getElementById("status").innerText =
 		"Image uploaded!";
