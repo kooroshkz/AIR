@@ -43,9 +43,11 @@ class ImageFilterWidget(QWidget):
         super().__init__()
         self.viewer = viewer
         self.original_data = None
+        
         # History stack for undo functionality
         self.history_stack = []
-        self.max_history = 20  # Maximum number of undo steps
+        # Maximum number of undo steps
+        self.max_history = 20 
 
         # Create main layout
         layout = QVBoxLayout()
@@ -118,7 +120,7 @@ class ImageFilterWidget(QWidget):
         # Find the first image layer
         for layer in selected_layers:
             if isinstance(layer, napari.layers.Image):
-                # Store original data for reset (The first time called)
+                # Store original data (The first time called)
                 if self.original_data is None:
                     self.original_data = layer.data.copy()
                 return layer
@@ -176,74 +178,68 @@ class ImageFilterWidget(QWidget):
             import traceback
             traceback.print_exc()
 
-    def _apply_filter(self, filter_func, reset=False):
+    def _apply_filter(self, filter_func):
         """
         Apply a filter to the current image layer.
 
         Args:
             filter_func (callable): Filter function to apply
-            reset (bool): Whether to reset to original data before applying filter
         """
         try:
             # Get current layer
             layer = self._get_current_layer()
-            
             # Store current state in history before applying filter
             self._push_to_history(layer)
-            
-            # Handle multi-dimensional image data
-            original_data = layer.data
-            
-            if filter_func in [apply_edge_enhance, apply_edge_detection]:
-                # Create a list to store filtered slices
-                filtered_slices = []
-                
-                # Iterate through the first dimension
-                for i in range(original_data.shape[0]):
-                    # Apply filter to each 2D slice
-                    slice_data = original_data[i]
-                    filtered_slice = filter_func(slice_data)
-                    
-                    # Ensure filtered slice is a numpy array
-                    if hasattr(filtered_slice, '__array__'):
-                        filtered_slice = np.asarray(filtered_slice)
-                    elif not isinstance(filtered_slice, np.ndarray):
-                        filtered_slice = np.array(filtered_slice)
-                    
-                    filtered_slices.append(filtered_slice)
-                
-                # Reconstruct the multi-dimensional array
-                filtered_array = np.stack(filtered_slices)
-                
-                # Store original data, so that we don't lose the build-up of filters
-                self.original_data = layer.data.copy()
-            else:
-                if reset:
-                    # Reset to the original data before applying the filter
-                    original_data = self.original_data.copy()
+            # Create copy to avoid modifying original
+            original_data = layer.data.copy()
 
-                # Apply the filter
+            # Preprocess for filters requiring grayscale input
+            if filter_func in [apply_grayscale, apply_texture_analysis, apply_adaptive_threshold]:
+                # RGB & RGBA images
+                if original_data.ndim == 3 and original_data.shape[2] in [3, 4]:
+                    original_data = np.mean(original_data, axis=2)
+                # Single-channel 3D array
+                elif original_data.ndim == 3 and original_data.shape[2] == 1:
+                    original_data = original_data.squeeze()
+
+            # Handle multi-dimensional data
+            if filter_func in [apply_edge_enhance, apply_edge_detection]:
+                # Check if input is 3D stack or single image (2D)
+                if original_data.ndim == 3 and original_data.shape[-1] not in [3, 4]:
+                    filtered_slices = []
+                    for i in range(original_data.shape[0]):
+                        # Apply filter to individual 2D slices
+                        slice_data = original_data[i]
+                        filtered_slice = filter_func(slice_data)
+                        filtered_slices.append(np.asarray(filtered_slice))
+                    # Rebuild 3D stack from processed slices
+                    filtered_array = np.stack(filtered_slices)
+                else:
+                    # Process single 2D image or RGB image directly
+                    filtered_array = filter_func(original_data)
+            else:
+                # Apply filter directly for non-special cases
                 filtered_array = filter_func(original_data)
 
-                # Ensure filtered array is a numpy array
-                if hasattr(filtered_array, '__array__'):
-                    filtered_array = np.asarray(filtered_array)
-                else:
-                    filtered_array = np.array(filtered_array)
+            # Rename filter function to saturation for display
+            if filter_func.__name__ == "<lambda>":
+                filter_func.__name__ = "apply_saturation"
 
-            # Update layer
-            layer.data = filtered_array
-        
+            # Create new layer with descriptive name and add to napari viewer
+            filter_name = filter_func.__name__.replace("apply_", "").replace("_", " ").title()
+            new_layer_name = f"{layer.name} | {filter_name}"
+            self.viewer.add_image(filtered_array, name=new_layer_name)
+
         except Exception as e:
             print(f"Error applying filter: {e}")
             import traceback
             traceback.print_exc()
-    
+
     def _apply_saturation(self):
         """Apply saturation adjustment to current layer."""
         sat_value = self.sat_slider.value() / 100.0
         # Connect the saturation button to the filter method
-        self._apply_filter(lambda img: apply_saturation(img, sat_value), True)
+        self._apply_filter(lambda img: apply_saturation(img, sat_value))
 
     def _apply_grayscale(self):
         """Apply grayscale filter to current layer."""
