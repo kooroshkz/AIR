@@ -135,7 +135,7 @@ class ChatWidget(QWidget):
         )
         return response.choices[0].message.content
 
-    def change_layer(self, curr_layer, filtered_array):
+    def change_layer(self, curr_layer, filtered_array, filter_name):
         """
         Switches the current layer to the newest filtered layer
         """
@@ -145,7 +145,9 @@ class ChatWidget(QWidget):
         elif not isinstance(filtered_array, np.ndarray):
             filtered_array = np.array(filtered_array)
 
-        curr_layer.data = filtered_array
+        # Create new layer with descriptive name and add to napari viewer
+        new_layer_name = f"{curr_layer.name} | {filter_name}"
+        self.viewer.add_image(filtered_array, name=new_layer_name)
 
     def execute_command(self, command):
         """
@@ -166,7 +168,7 @@ class ChatWidget(QWidget):
                 value = float(parts[1])
                 if cmd_name in ["blur", "contrast", "saturation", "sharpen"]:
                     filtered_array = self.available_commands[cmd_name](img, value)
-                    self.change_layer(layer, filtered_array)
+                    self.change_layer(layer, filtered_array, cmd_name.title())
                     self.add_to_chat(f"Executed: {cmd_name} with value {value}")
                     return
             except (IndexError, ValueError):
@@ -179,7 +181,7 @@ class ChatWidget(QWidget):
         if cmd_name in self.available_commands:
             try:
                 filtered_array = self.available_commands[cmd_name](img)
-                self.change_layer(layer, filtered_array)
+                self.change_layer(layer, filtered_array, cmd_name.title())
                 self.add_to_chat(f"Executed: {cmd_name}")
                 self.filter_widget._push_to_history(layer)
                 return
