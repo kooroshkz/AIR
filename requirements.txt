@@ -12,6 +12,7 @@ mypy
 types-Pillow
 typing
 pydantic
+sounddevice
 
 # Development and testing dependencies
 pytest
