@@ -16,7 +16,7 @@ setup(
         'scikit-image', 
         'scipy',
         'openai',
-        'python-dotenv'
+        'python-dotenv',
         'typing',
         'pydantic'
     ],
