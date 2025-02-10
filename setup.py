@@ -18,7 +18,9 @@ setup(
         'openai',
         'python-dotenv',
         'typing',
-        'pydantic'
+        'pydantic',
+        'sounddevice',
+        'wave',
     ],
     extras_require={
         'dev': [
