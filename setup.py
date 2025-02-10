@@ -17,6 +17,8 @@ setup(
         'scipy',
         'openai',
         'python-dotenv'
+        'typing',
+        'pydantic'
     ],
     extras_require={
         'dev': [
