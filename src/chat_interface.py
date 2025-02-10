@@ -1,7 +1,16 @@
-import os
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QPushButton, QLineEdit
-from openai import OpenAI
-import numpy as np
+from    os          import  getenv
+from    openai      import  OpenAI
+import  numpy       as      np
+from qtpy.QtCore    import  QEvent, Qt
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTextEdit,
+    QPushButton,
+    QLineEdit,
+    QTextEdit
+)
 from .napari_image_filters import (
     apply_grayscale,
     apply_saturation,
@@ -13,21 +22,22 @@ from .napari_image_filters import (
     apply_adaptive_threshold,
     apply_sharpening,
 )
-
+from .chatgpt       import GPT
+from .stt           import STT
 
 class ChatWidget(QWidget):
     """
-    Multi-modal chat widget which is will support both text and speech interaction
+    Multi-modal chat widget supporting text and speech interaction.
+    Speech is triggered by holding the spacebar. (Not anymore, todo?)
     """
 
     def __init__(self, viewer, filter_widget):
         """
-        Initialize everything. Including what commands are possible to use,
-        and how the chatUI should look like.
+        Initialize the chat widget, available commands, and UI.
         """
         super().__init__()
         self.viewer = viewer
-        self.filter_widget = filter_widget  # Store reference to ImageFilterWidget
+        self.filter_widget = filter_widget  # Reference to an ImageFilterWidget, if needed
         self.setup_ui()
         self.available_commands = {
             "grayscale": apply_grayscale,
@@ -40,15 +50,17 @@ class ChatWidget(QWidget):
             "threshold": apply_adaptive_threshold,
             "sharpen": apply_sharpening,
         }
-        self.ai_system_prompt = os.getenv("AI_PROMPT")
-        # Initialize your LLM client here
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        AI_PROMPT = getenv("AI_PROMPT")
+        OPENAI_API_KEY = getenv("OPENAI_API_KEY")
+        self.ai_system_prompt = AI_PROMPT
+        self.Chat = GPT(api_key=OPENAI_API_KEY, prompt=AI_PROMPT)
+        self.stt = STT(api_key=OPENAI_API_KEY)
 
     def setup_ui(self):
         """Configure the widget's user interface."""
         layout = QVBoxLayout()
 
-        # Chat history with improved styling
+        # Chat history text area
         self.chat_history = QTextEdit()
         self.chat_history.setReadOnly(True)
         self.chat_history.setStyleSheet(
@@ -57,11 +69,14 @@ class ChatWidget(QWidget):
                 border: 1px solid #cccccc;
                 padding: 5px;
             }
-        """
+            """
         )
         layout.addWidget(self.chat_history)
 
-        # Input field with placeholder and styling
+        # Horizontal layout for text input, send button, and record button
+        input_layout = QHBoxLayout()
+
+        # Input field for text messages
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Enter your image processing request...")
         self.input_field.setStyleSheet(
@@ -71,12 +86,12 @@ class ChatWidget(QWidget):
                 border: 1px solid #cccccc;
                 border-radius: 3px;
             }
-        """
+            """
         )
         self.input_field.returnPressed.connect(self.process_input)
-        layout.addWidget(self.input_field)
+        input_layout.addWidget(self.input_field)
 
-        # Send button with styling
+        # Send button for text input
         self.send_button = QPushButton("Send")
         self.send_button.setStyleSheet(
             """
@@ -90,12 +105,61 @@ class ChatWidget(QWidget):
             QPushButton:hover {
                 background-color: #0255b3;
             }
-        """
+            """
         )
         self.send_button.clicked.connect(self.process_input)
-        layout.addWidget(self.send_button)
+        input_layout.addWidget(self.send_button)
 
+        # Record button for audio input (press-and-hold)
+        self.record_button = QPushButton("Hold to Record")
+        self.record_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                padding: 5px 15px;
+                border: none;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+            """
+        )
+        # When pressed, start recording; when released, stop and process the audio.
+        self.record_button.pressed.connect(self.start_audio_recording)
+        self.record_button.released.connect(self.stop_audio_recording)
+        input_layout.addWidget(self.record_button)
+
+        layout.addLayout(input_layout)
         self.setLayout(layout)
+
+    def start_audio_recording(self):
+        """Start audio recording and update UI to indicate recording state."""
+        self.record_button.setText("Recording...")
+        self.stt.start_recording()
+
+    def stop_audio_recording(self):
+        """
+        Stop audio recording, transcribe the audio, and process the transcript.
+        Updates the UI and sends the transcribed text to the GPT API.
+        """
+        self.stt.stop_recording()
+        self.record_button.setText("Transcribing...")
+        transcript = self.stt.transcribe()
+        self.chat_history.append(f"[👤] User: <i>{transcript}</i>")
+
+        try:
+            response_text, action = self.Chat.say(transcript)
+            if response_text: self.add_to_chat(f'[🤖] <b>{response_text}</b>')
+            if action:
+                self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
+                self.execute_command(action)
+        except Exception as e:
+            self.add_to_chat("[⚠️] Error: " + str(e))
+
+        
+        self.record_button.setText("Hold to Record")
 
     def process_input(self):
         """
@@ -105,35 +169,32 @@ class ChatWidget(QWidget):
         if not user_input:
             return
 
-        self.add_to_chat("User: " + user_input)
+        self.add_to_chat(f'[👤] User: <i>{user_input}</i>')
         self.input_field.clear()
 
         # Process with LLM
         try:
-            response = self.get_llm_response(user_input)
-            self.add_to_chat("Assistant: {}".format(response))
-            self.execute_command(response)
+            reponse_text, action = self.Chat.say(user_input)
+            if reponse_text: self.add_to_chat(f'[🤖] <b>{reponse_text}</b>')
+            if action:
+                self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
+                self.execute_command(action)
         except Exception as e:
-            self.add_to_chat("Error: " + str(e))
+            self.add_to_chat("[⚠️] Error: " + str(e))
+
+    def format_action(self, action):
+        """
+        str formating
+        """
+        return ", ".join([
+            f"{act.action_name} {','.join(str(it) for it in act.action_args)}" for act in action
+        ])
 
     def add_to_chat(self, message):
         """
         Appends to the chat a message
         """
         self.chat_history.append(message)
-
-    def get_llm_response(self, user_input):
-        """
-        Fetches the response from the LLM model with a given system prompt
-        """
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": self.ai_system_prompt},
-                {"role": "user", "content": user_input},
-            ],
-        )
-        return response.choices[0].message.content
 
     def change_layer(self, curr_layer, filtered_array, filter_name):
         """
@@ -153,40 +214,61 @@ class ChatWidget(QWidget):
         """
         Executes a command from the LLM
         """
-        command = command.lower().strip()
-        parts = command.split()
-        cmd_name = parts[0]
 
-        # Handle saturation separately since it needs an integer value
-        # Get current layer
-        layer = self.filter_widget._get_current_layer()
-        img = self.filter_widget.original_data.copy()
+        # print(command)
+        
+        for action in command:
 
-        # Handle commands with parameters
-        if len(parts) > 1:
-            try:
-                value = float(parts[1])
-                if cmd_name in ["blur", "contrast", "saturation", "sharpen"]:
-                    filtered_array = self.available_commands[cmd_name](img, value)
-                    self.change_layer(layer, filtered_array, cmd_name.title())
-                    self.add_to_chat(f"Executed: {cmd_name} with value {value}")
-                    return
-            except (IndexError, ValueError):
-                self.filter_widget.add_to_chat(
-                    f"Error: {cmd_name} requires a valid numeric value"
-                )
-                return
+            funct = action.action_name
+            param = action.action_args
 
-        # Handle commands without parameters
-        if cmd_name in self.available_commands:
-            try:
-                filtered_array = self.available_commands[cmd_name](img)
-                self.change_layer(layer, filtered_array, cmd_name.title())
-                self.add_to_chat(f"Executed: {cmd_name}")
+            layer = self.filter_widget._get_current_layer()
+            img = self.filter_widget.original_data.copy()
+
+            if param != []:
+                filtered_array = self.available_commands[cmd_name](img, value[0])
+            else:
+                filtered_array = self.available_commands[funct](img)
+            self.change_layer(layer, filtered_array, funct.title())
+            if param == []:
                 self.filter_widget._push_to_history(layer)
-                return
-            except Exception as e:
-                self.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
-                return
+        return
 
-        self.add_to_chat("I did not quite catch that one.")
+        # OLD system
+        # command = command.lower().strip()
+        # parts = command.split()
+        # cmd_name = parts[0]
+
+        # # Handle saturation separately since it needs an integer value
+        # # Get current layer
+        # layer = self.filter_widget._get_current_layer()
+        # img = self.filter_widget.original_data.copy()
+
+        # # Handle commands with parameters
+        # if len(parts) > 1:
+        #     try:
+        #         value = float(parts[1])
+        #         if cmd_name in ["blur", "contrast", "saturation", "sharpen"]:
+        #             filtered_array = self.available_commands[cmd_name](img, value)
+        #             self.change_layer(layer, filtered_array, cmd_name.title())
+        #             # self.add_to_chat(f"Executed: {cmd_name} with value {value}")
+        #             return
+        #     except (IndexError, ValueError):
+        #         self.filter_widget.add_to_chat(
+        #             f"Error: {cmd_name} requires a valid numeric value"
+        #         )
+        #         return
+
+        # # Handle commands without parameters
+        # if cmd_name in self.available_commands:
+        #     try:
+        #         filtered_array = self.available_commands[cmd_name](img)
+        #         self.change_layer(layer, filtered_array, cmd_name.title())
+        #         # self.add_to_chat(f"Executed: {cmd_name}")
+        #         self.filter_widget._push_to_history(layer)
+        #         return
+        #     except Exception as e:
+        #         self.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
+        #         return
+
+        # self.add_to_chat("I did not quite catch that one.")
