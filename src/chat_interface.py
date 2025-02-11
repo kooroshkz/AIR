@@ -23,7 +23,11 @@ from .napari_image_filters import (
     apply_sharpening,
 )
 from .chatgpt       import GPT
-from .stt           import STT
+# The exception handles the headless CICD testing
+try:
+    from .stt           import STT
+except OSError:
+    STT = None
 
 class ChatWidget(QWidget):
     """
@@ -55,12 +59,8 @@ class ChatWidget(QWidget):
         self.ai_system_prompt = AI_PROMPT
         self.Chat = GPT(api_key=OPENAI_API_KEY, prompt=AI_PROMPT)
 
-        # The exception handles the headless CICD testing
-        try:
+        if STT is not None:
             self.stt = STT(api_key=OPENAI_API_KEY)
-        except OSError:
-            self.stt = None
-            print("OSError occured. STT was not initialized.")
 
     def setup_ui(self):
         """Configure the widget's user interface."""
