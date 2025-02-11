@@ -2,7 +2,7 @@ name: Python CI/CD Pipeline
 on: [push, pull_request]
 
 permissions:
-  contents: read
+  contents: write
   checks: write
   statuses: write
 
