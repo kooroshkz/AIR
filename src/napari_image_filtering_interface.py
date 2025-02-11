@@ -15,7 +15,7 @@ from .napari_image_filters import (
     apply_edge_enhance, apply_edge_detection,
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
-    apply_sharpening
+    apply_sharpening, apply_ridge_detection
 )
 
 from .chat_interface import (
@@ -85,7 +85,8 @@ class ImageFilterWidget(QWidget):
             ("Contrast Enhance", self._apply_contrast_enhancement),
             ("Texture Analysis", self._apply_texture_analysis),
             ("Adaptive Threshold", self._apply_adaptive_threshold),
-            ("Sharpen", self._apply_sharpening)
+            ("Sharpen", self._apply_sharpening),
+            ("Ridge Detection", self._apply_ridge_detection) 
         ]
         
         for name, method in filter_buttons:
@@ -270,8 +271,14 @@ class ImageFilterWidget(QWidget):
         self._apply_filter(apply_adaptive_threshold)
 
     def _apply_sharpening(self):
-        """Apply sharpening to the current image"""
+        """Apply sharpening filter to the current image."""
         self._apply_filter(apply_sharpening)
+
+
+    def _apply_ridge_detection(self):
+        """Apply ridge detection to the current image."""
+        self._apply_filter(apply_ridge_detection)
+
 
 def napari_experimental_provide_dock_widget():
     """
