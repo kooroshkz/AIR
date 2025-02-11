@@ -1,7 +1,7 @@
-from    os          import  getenv
-from    openai      import  OpenAI
-import  numpy       as      np
-from qtpy.QtCore    import  QEvent, Qt
+from os import getenv
+from openai import OpenAI
+import numpy as np
+from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -23,12 +23,13 @@ from .napari_image_filters import (
     apply_sharpening,
     apply_ridge_detection,
 )
-from .chatgpt       import GPT
+from .chatgpt import GPT
 # The exception handles the headless CICD testing
 try:
-    from .stt           import STT
+    from .stt import STT
 except OSError:
     STT = None
+
 
 class ChatWidget(QWidget):
     """
@@ -86,7 +87,8 @@ class ChatWidget(QWidget):
 
         # Input field for text messages
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Enter your image processing request...")
+        self.input_field.setPlaceholderText(
+            "Enter your image processing request...")
         self.input_field.setStyleSheet(
             """
             QLineEdit {
@@ -134,7 +136,8 @@ class ChatWidget(QWidget):
             }
             """
         )
-        # When pressed, start recording; when released, stop and process the audio.
+        # When pressed, start recording; when released, stop and process the
+        # audio.
         self.record_button.pressed.connect(self.start_audio_recording)
         self.record_button.released.connect(self.stop_audio_recording)
         input_layout.addWidget(self.record_button)
@@ -159,14 +162,14 @@ class ChatWidget(QWidget):
 
         try:
             response_text, action = self.Chat.say(transcript)
-            if response_text: self.add_to_chat(f'[🤖] <b>{response_text}</b>')
+            if response_text:
+                self.add_to_chat(f'[🤖] <b>{response_text}</b>')
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)
         except Exception as e:
             self.add_to_chat("[⚠️] Error: " + str(e))
 
-        
         self.record_button.setText("Hold to Record")
 
     def process_input(self):
@@ -183,7 +186,8 @@ class ChatWidget(QWidget):
         # Process with LLM
         try:
             reponse_text, action = self.Chat.say(user_input)
-            if reponse_text: self.add_to_chat(f'[🤖] <b>{reponse_text}</b>')
+            if reponse_text:
+                self.add_to_chat(f'[🤖] <b>{reponse_text}</b>')
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)
@@ -224,7 +228,7 @@ class ChatWidget(QWidget):
         """
 
         # print(command)
-        
+
         for action in command:
 
             funct = action.action_name
@@ -234,7 +238,8 @@ class ChatWidget(QWidget):
             img = self.filter_widget.original_data.copy()
 
             if param != []:
-                filtered_array = self.available_commands[cmd_name](img, value[0])
+                filtered_array = self.available_commands[cmd_name](
+                    img, value[0])
             else:
                 filtered_array = self.available_commands[funct](img)
             self.change_layer(layer, filtered_array, funct.title())

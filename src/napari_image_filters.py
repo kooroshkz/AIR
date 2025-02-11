@@ -44,7 +44,8 @@ def apply_gaussian_blur(
         # For RGB images, apply to each channel
         blurred = np.zeros_like(img_array)
         for i in range(img_array.shape[2]):
-            blurred[:, :, i] = gaussian_filter(img_array[:, :, i], sigma=radius)
+            blurred[:, :, i] = gaussian_filter(
+                img_array[:, :, i], sigma=radius)
     else:
         # For grayscale images
         blurred = gaussian_filter(img_array, sigma=radius)
@@ -116,9 +117,8 @@ def apply_texture_analysis(
     lbp = local_binary_pattern(gray_img, n_points, radius, method="uniform")
 
     # Normalize to 0-255 range
-    lbp_normalized = ((lbp - lbp.min()) * (255.0 / (lbp.max() - lbp.min()))).astype(
-        np.uint8
-    )
+    lbp_normalized = ((lbp - lbp.min()) *
+                      (255.0 / (lbp.max() - lbp.min()))).astype(np.uint8)
 
     # If the input was a 3D array, maintain the shape for consistency
     if input_array.ndim == 3:
@@ -152,8 +152,12 @@ def apply_adaptive_threshold(
 
     # Apply adaptive threshold
     thresh = cv2.adaptiveThreshold(
-        gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, c
-    )
+        gray_img,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        block_size,
+        c)
 
     if input_array.ndim == 3:
         return thresh[..., np.newaxis]
@@ -161,22 +165,21 @@ def apply_adaptive_threshold(
     return thresh
 
 
-
 def apply_sharpening(img: np.ndarray) -> np.ndarray:
     """
     Apply sharpening using a convolutional kernel.
-    
+
     Args:
         img (numpy.ndarray): Input image.
-        
+
     Returns:
         numpy.ndarray: Sharpened image.
     """
     # Define sharpening kernel
     sharpen_kernel = np.array([
-        [ 0, -1,  0],
-        [-1,  5, -1],
-        [ 0, -1,  0]
+        [0, -1, 0],
+        [-1, 5, -1],
+        [0, -1, 0]
     ])
 
     # Apply filter using OpenCV
@@ -184,16 +187,18 @@ def apply_sharpening(img: np.ndarray) -> np.ndarray:
 
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
+
 def apply_ridge_detection(img: np.ndarray) -> np.ndarray:
     """
     Apply ridge detection using a convolutional kernel.
     """
     ridge_kernel = np.array([
         [-1, -1, -1],
-        [-1,  9, -1],
+        [-1, 9, -1],
         [-1, -1, -1]
     ])
-    return np.clip(cv2.filter2D(img, -1, ridge_kernel), 0, 255).astype(np.uint8)
+    return np.clip(cv2.filter2D(img, -1, ridge_kernel),
+                   0, 255).astype(np.uint8)
 
 
 def ensure_pil_image(img: Union[Image.Image, np.ndarray, str]) -> Image.Image:
@@ -247,7 +252,8 @@ def ensure_pil_image(img: Union[Image.Image, np.ndarray, str]) -> Image.Image:
         # If shape doesn't match expected formats
         raise TypeError(f"Unsupported NumPy array shape: {img.shape}")
 
-    raise TypeError("Input must be a PIL Image, NumPy array, or valid image path")
+    raise TypeError(
+        "Input must be a PIL Image, NumPy array, or valid image path")
 
 
 def apply_grayscale(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
@@ -277,9 +283,8 @@ def apply_grayscale(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     return grayscale_array
 
 
-def apply_crop(
-    img: Union[Image.Image, np.ndarray, str], corners: Tuple[int, int, int, int]
-) -> np.ndarray:
+def apply_crop(img: Union[Image.Image, np.ndarray, str],
+               corners: Tuple[int, int, int, int]) -> np.ndarray:
     """
     Crop an image based on provided corner coordinates.
 
@@ -371,7 +376,8 @@ def apply_edge_enhance(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     return np.array(enhanced_pil)
 
 
-def apply_edge_detection(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
+def apply_edge_detection(
+        img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     """
     Detect edges in the image.
 
@@ -410,5 +416,3 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
         gray_img = input_array
 
     return gray_img
-
-

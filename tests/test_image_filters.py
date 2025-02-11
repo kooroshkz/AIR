@@ -26,6 +26,7 @@ from src.napari_image_filters import (
     sanitize_dimensional_image
 )
 
+
 @pytest.mark.unit
 def test_apply_gaussian_blur(sample_images):
     """
@@ -35,15 +36,16 @@ def test_apply_gaussian_blur(sample_images):
     blurred = apply_gaussian_blur(sample_images['rgb_pil'])
     assert isinstance(blurred, np.ndarray)
     assert blurred.shape == sample_images['rgb_array'].shape
-    
+
     # Test with custom radius
     blurred_strong = apply_gaussian_blur(sample_images['rgb_pil'], radius=5.0)
     assert isinstance(blurred_strong, np.ndarray)
-    
+
     # Test with grayscale image
     gray_blurred = apply_gaussian_blur(sample_images['gray_pil'])
     assert isinstance(gray_blurred, np.ndarray)
     assert gray_blurred.ndim == 2
+
 
 @pytest.mark.unit
 def test_apply_contrast_enhancement(sample_images):
@@ -54,14 +56,17 @@ def test_apply_contrast_enhancement(sample_images):
     enhanced = apply_contrast_enhancement(sample_images['rgb_pil'])
     assert isinstance(enhanced, np.ndarray)
     assert enhanced.shape == sample_images['rgb_array'].shape
-    
+
     # Test with custom factor
-    enhanced_strong = apply_contrast_enhancement(sample_images['rgb_pil'], factor=2.5)
+    enhanced_strong = apply_contrast_enhancement(
+        sample_images['rgb_pil'], factor=2.5)
     assert isinstance(enhanced_strong, np.ndarray)
-    
+
     # Test with grayscale image
     gray_enhanced = apply_contrast_enhancement(sample_images['gray_pil'])
     assert isinstance(gray_enhanced, np.ndarray)
+
+
 @pytest.mark.unit
 def test_apply_texture_analysis(sample_images):
     """
@@ -70,7 +75,7 @@ def test_apply_texture_analysis(sample_images):
     # Test with default parameters
     texture = apply_texture_analysis(sample_images['rgb_pil'])
     assert isinstance(texture, np.ndarray)
-    
+
     # Test with custom parameters
     texture_custom = apply_texture_analysis(
         sample_images['rgb_pil'],
@@ -78,10 +83,11 @@ def test_apply_texture_analysis(sample_images):
         n_points=12
     )
     assert isinstance(texture_custom, np.ndarray)
-    
+
     # Test with grayscale image
     gray_texture = apply_texture_analysis(sample_images['gray_pil'])
     assert isinstance(gray_texture, np.ndarray)
+
 
 @pytest.mark.unit
 def test_apply_adaptive_threshold(sample_images):
@@ -91,7 +97,7 @@ def test_apply_adaptive_threshold(sample_images):
     # Test with default parameters
     thresh = apply_adaptive_threshold(sample_images['rgb_pil'])
     assert isinstance(thresh, np.ndarray)
-    
+
     # Test with custom parameters
     thresh_custom = apply_adaptive_threshold(
         sample_images['rgb_pil'],
@@ -99,10 +105,11 @@ def test_apply_adaptive_threshold(sample_images):
         c=5
     )
     assert isinstance(thresh_custom, np.ndarray)
-    
+
     # Test with grayscale image
     gray_thresh = apply_adaptive_threshold(sample_images['gray_pil'])
     assert isinstance(gray_thresh, np.ndarray)
+
 
 @pytest.mark.unit
 def test_apply_sharpening(sample_images):
@@ -120,14 +127,16 @@ def test_apply_sharpening(sample_images):
     assert sharp.dtype == np.uint8
 
     # Ensure sharpening has an effect by checking pixel changes
-    assert not np.array_equal(sharp, rgb_array), "Sharpening should modify the image"
+    assert not np.array_equal(
+        sharp, rgb_array), "Sharpening should modify the image"
 
     # Test with grayscale image
     gray_sharp = apply_sharpening(gray_array)
     assert isinstance(gray_sharp, np.ndarray)
     assert gray_sharp.shape == gray_array.shape
     assert gray_sharp.dtype == np.uint8
-    assert not np.array_equal(gray_sharp, gray_array), "Sharpening should modify the grayscale image"
+    assert not np.array_equal(
+        gray_sharp, gray_array), "Sharpening should modify the grayscale image"
 
 
 @pytest.mark.unit
@@ -139,11 +148,12 @@ def test_sanitize_dimensional_image(sample_images):
     gray = sanitize_dimensional_image(sample_images['rgb_pil'])
     assert isinstance(gray, np.ndarray)
     assert gray.ndim == 2  # Should be 2D grayscale
-    
+
     # Test with grayscale image
     gray_from_gray = sanitize_dimensional_image(sample_images['gray_pil'])
     assert isinstance(gray_from_gray, np.ndarray)
     assert gray_from_gray.ndim == 2
+
 
 @pytest.mark.unit
 def test_error_handling():
@@ -153,14 +163,15 @@ def test_error_handling():
     # Test invalid radius for Gaussian blur
     with pytest.raises(ValueError):
         apply_gaussian_blur(np.zeros((10, 10)), radius=-1.0)
-    
+
     # Test invalid saturation level
     with pytest.raises(ValueError):
         apply_saturation(np.zeros((10, 10)), saturation_level=-1.0)
-    
+
     # Test invalid block size for adaptive threshold
     with pytest.raises(ValueError):
         apply_adaptive_threshold(np.zeros((10, 10)), block_size=-1)
+
 
 @pytest.mark.unit
 def test_input_type_handling(sample_images):
@@ -176,19 +187,20 @@ def test_input_type_handling(sample_images):
         apply_sharpening,
         apply_ridge_detection
     ]
-    
+
     for func in functions_to_test:
         # Test with RGB array
         result = func(sample_images['rgb_array'])
         assert isinstance(result, np.ndarray)
-        
+
         # Test with grayscale array
         result = func(sample_images['gray_array'])
         assert isinstance(result, np.ndarray)
-        
+
         # Test with file path
         result = func(sample_images['rgb_path'])
         assert isinstance(result, np.ndarray)
+
 
 @pytest.fixture(scope="module")
 def sample_images():
@@ -220,6 +232,7 @@ def sample_images():
         'gray_array': gray_array
     }
 
+
 @pytest.mark.unit
 def test_ensure_pil_image(sample_images):
     """
@@ -227,19 +240,20 @@ def test_ensure_pil_image(sample_images):
     """
     # Test PIL Image conversion
     assert isinstance(ensure_pil_image(sample_images['rgb_pil']), Image.Image)
-    
+
     # Test file path conversion
     assert isinstance(ensure_pil_image(sample_images['rgb_path']), Image.Image)
-    
+
     # Test RGB NumPy array conversion
     rgb_converted = ensure_pil_image(sample_images['rgb_array'])
     assert isinstance(rgb_converted, Image.Image)
     assert rgb_converted.mode == 'RGB'
-    
+
     # Test Grayscale NumPy array conversion
     gray_converted = ensure_pil_image(sample_images['gray_array'])
     assert isinstance(gray_converted, Image.Image)
     assert gray_converted.mode == 'L'
+
 
 @pytest.mark.unit
 def test_apply_grayscale(sample_images):
@@ -249,6 +263,7 @@ def test_apply_grayscale(sample_images):
     gray_array = apply_grayscale(sample_images['rgb_pil'])
     assert isinstance(gray_array, np.ndarray)
     assert gray_array.ndim == 2
+
 
 @pytest.mark.unit
 def test_apply_crop(sample_images):
@@ -260,6 +275,7 @@ def test_apply_crop(sample_images):
     assert isinstance(cropped_img, np.ndarray)
     assert cropped_img.shape[:2] == (80, 80)
 
+
 @pytest.mark.unit
 def test_apply_saturation(sample_images):
     """
@@ -267,6 +283,7 @@ def test_apply_saturation(sample_images):
     """
     saturated_img = apply_saturation(sample_images['rgb_pil'], 1.5)
     assert isinstance(saturated_img, np.ndarray)
+
 
 @pytest.mark.unit
 def test_edge_processing(sample_images):
@@ -278,6 +295,7 @@ def test_edge_processing(sample_images):
 
     edge_img = apply_edge_detection(sample_images['rgb_pil'])
     assert isinstance(edge_img, np.ndarray)
+
 
 @pytest.mark.unit
 def test_ridge_detection(sample_images):

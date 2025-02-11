@@ -12,7 +12,6 @@ app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
-
 @app.route("/")
 def home():
     """
@@ -67,7 +66,11 @@ def upload_data():
 
     # also creates the new folder inside of the main data folder
     # where audio, transcription, and image will get saved
-    err = build_db_entry(image_file, audio_file, annotation_raw, app.config["UPLOAD_FOLDER"])
+    err = build_db_entry(
+        image_file,
+        audio_file,
+        annotation_raw,
+        app.config["UPLOAD_FOLDER"])
 
     if (err is not None):
         status = "error"

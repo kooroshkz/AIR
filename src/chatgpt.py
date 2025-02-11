@@ -1,16 +1,19 @@
 
-from os         import remove
-from pydantic   import BaseModel
-from typing     import List, Union
-from openai     import OpenAI
+from os import remove
+from pydantic import BaseModel
+from typing import List, Union
+from openai import OpenAI
+
 
 class ActionModel(BaseModel):
     action_name: str
     action_args: List[Union[str, int, bool]]
 
+
 class ActionChainModel(BaseModel):
     response_text: str  # Note: Fixed typo "reponse_text" -> "response_text"
     action: List[ActionModel]
+
 
 class GPT:
     def __init__(self, api_key: str, prompt: str = ""):

@@ -1,13 +1,14 @@
 # src/stt.py
 
-from    tempfile    import  NamedTemporaryFile
-from    threading   import  Event, Thread
-from    os          import  remove
-from    dotenv      import  load_dotenv
-from    src.chatgpt import  GPT
-import  numpy       as      np
-import  sounddevice as      sd
+from tempfile import NamedTemporaryFile
+from threading import Event, Thread
+from os import remove
+from dotenv import load_dotenv
+from src.chatgpt import GPT
+import numpy as np
+import sounddevice as sd
 import wave
+
 
 class STT:
     """
@@ -15,7 +16,11 @@ class STT:
     a stop signal is received and transcribes it using OpenAI's Whisper API.
     """
 
-    def __init__(self, api_key: str = None, sample_rate: int = 44100, channels: int = 1):
+    def __init__(
+            self,
+            api_key: str = None,
+            sample_rate: int = 44100,
+            channels: int = 1):
         load_dotenv()
         self.api_key = api_key
         self.sample_rate = sample_rate

@@ -6,13 +6,16 @@ from logger import *
 
 logger = get_logger(__name__)
 
+
 def build_db_entry(
-    image_file: FileStorage, audio_file: FileStorage, annotation: str, upload_dir: str
-) -> sqlite3.Error | OSError | IOError | None:
+        image_file: FileStorage,
+        audio_file: FileStorage,
+        annotation: str,
+        upload_dir: str) -> sqlite3.Error | OSError | IOError | None:
     try:
         con = sqlite3.connect("database/database.db")
         cur = con.cursor()
-        logger.info("Connected to database.") 
+        logger.info("Connected to database.")
     except sqlite3.Error as e:
         logger.error(f"Database connection error: {e}")
         return e
@@ -33,10 +36,15 @@ def build_db_entry(
     try:
 
         # build the directory to store them and then store them
-        file_path = app_utils.build_data_dirs(upload_dir=upload_dir, id_num=id_num)
-        #str()s here are also so my LSP shuts up
-        audio_file_path = os.path.join(str(file_path), str(audio_file.filename))
-        image_file_path = os.path.join(str(file_path), str(image_file.filename))
+        file_path = app_utils.build_data_dirs(
+            upload_dir=upload_dir, id_num=id_num)
+        # str()s here are also so my LSP shuts up
+        audio_file_path = os.path.join(
+            str(file_path), str(
+                audio_file.filename))
+        image_file_path = os.path.join(
+            str(file_path), str(
+                image_file.filename))
 
         audio_file.save(audio_file_path)
         image_file.save(image_file_path)
@@ -50,7 +58,6 @@ def build_db_entry(
         logger.error(f"File handling error: {e}")
         con.close()
         return e
-
 
     try:
         # now that we have all the paths, add all the DB entries
@@ -71,7 +78,8 @@ def build_db_entry(
         )
 
         con.commit()
-        logger.info(f"Database entry created successfully for image_id {id_num}")
+        logger.info(
+            f"Database entry created successfully for image_id {id_num}")
     except sqlite3.Error as e:
         logger.error(f"Database error: {e}")
         con.rollback()

@@ -15,14 +15,14 @@ def response_to_output_raw(response: requests.models.Response) -> str | dict:
     """
     Collect the raw response of the huggingface model and conevrt it into text
     """
-    
+
     logger.debug("Processing HuggingFace Response.")
 
     # get the payload
     payload = response.json()
 
     # grab first object (which contains the output)
-    if type(payload) != dict:
+    if not isinstance(payload, dict):
         response_dict = payload[0]
         return response_dict["generated_text"]
     else:
@@ -47,7 +47,7 @@ def allowed_filename(filename: str | None):
 
     logger.debug("Checking for allowed filename.")
 
-    if filename == None:
+    if filename is None:
         return False
 
     if "." not in filename:
@@ -60,19 +60,20 @@ def allowed_filename(filename: str | None):
     return True
 
 
-def get_model_response(text : str) -> str:
+def get_model_response(text: str) -> str:
     """
     Gets the model response + adds separator |||||
     """
 
     payload = {
-        "inputs": "you are a biology specialist who will convert the following sentence into a bullet point list summarizing the observations."
-        + text
-        + "|||||",
+        "inputs": "you are a biology specialist who will convert the following sentence into a bullet point list summarizing the observations." +
+        text +
+        "|||||",
     }
 
     try:
-        logger.debug(f"Sending request with header: {headers} and payload: {payload} to Huggingface.")
+        logger.debug(
+            f"Sending request with header: {headers} and payload: {payload} to Huggingface.")
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
         model_output = response_to_output_raw(response)
@@ -81,9 +82,10 @@ def get_model_response(text : str) -> str:
         print(f"ERROR: in calling huggingface for model response -> {str(e)}")
         return "ERROR"
 
-    if type(model_output) == dict:
+    if isinstance(model_output, dict):
         logger.error(f"Error: unrecognized return from LLM: {model_output}")
-        raise ValueError(f"Error: unrecognized return from LLM: {model_output}")
+        raise ValueError(
+            f"Error: unrecognized return from LLM: {model_output}")
 
     response_clean = response.json()
     response_clean[0]["generated_text"] = clean_response(model_output, text)
