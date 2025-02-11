@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+napari_air_plugin.egg-info/
 *.py[cod]
 *$py.class
 
