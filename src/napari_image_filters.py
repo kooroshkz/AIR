@@ -161,6 +161,7 @@ def apply_adaptive_threshold(
     return thresh
 
 
+
 def apply_sharpening(
     img: Union[Image.Image, np.ndarray, str], strength: float = 1.0
 ) -> np.ndarray:
@@ -188,6 +189,17 @@ def apply_sharpening(
 
     # Clip values to valid range
     return np.clip(sharpened, 0, 255).astype(np.uint8)
+
+def apply_ridge_detection(img: np.ndarray) -> np.ndarray:
+    """
+    Apply ridge detection using a convolutional kernel.
+    """
+    ridge_kernel = np.array([
+        [-1, -1, -1],
+        [-1,  9, -1],
+        [-1, -1, -1]
+    ])
+    return np.clip(cv2.filter2D(img, -1, ridge_kernel), 0, 255).astype(np.uint8)
 
 
 def ensure_pil_image(img: Union[Image.Image, np.ndarray, str]) -> Image.Image:
@@ -404,3 +416,5 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
         gray_img = input_array
 
     return gray_img
+
+
