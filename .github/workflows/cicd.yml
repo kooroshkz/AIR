@@ -70,6 +70,14 @@ jobs:
           python-version: "3.12"
           cache: 'pip'
 
+      - name: Cache APT packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt/archives
+          key: apt-cache-${{ runner.os }}-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            apt-cache-${{ runner.os }}-
+
       - name: Set up OS dependencies
         run: |
           sudo apt-get update
