@@ -54,7 +54,13 @@ class ChatWidget(QWidget):
         OPENAI_API_KEY = getenv("OPENAI_API_KEY")
         self.ai_system_prompt = AI_PROMPT
         self.Chat = GPT(api_key=OPENAI_API_KEY, prompt=AI_PROMPT)
-        self.stt = STT(api_key=OPENAI_API_KEY)
+
+        # The exception handles the headless CICD testing
+        try:
+            self.stt = STT(api_key=OPENAI_API_KEY)
+        except OSError:
+            self.stt = None
+            print("OSError occured. STT was not initialized.")
 
     def setup_ui(self):
         """Configure the widget's user interface."""
