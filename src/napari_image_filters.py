@@ -162,32 +162,26 @@ def apply_adaptive_threshold(
 
 
 
-def apply_sharpening(
-    img: Union[Image.Image, np.ndarray, str], strength: float = 1.0
-) -> np.ndarray:
+def apply_sharpening(img: np.ndarray) -> np.ndarray:
     """
-    Sharpen the image using unsharp masking.
-
+    Apply sharpening using a convolutional kernel.
+    
     Args:
-        img (PIL.Image, numpy.ndarray, str): Input image
-        strength (float): Sharpening strength factor
-
+        img (numpy.ndarray): Input image.
+        
     Returns:
-        numpy.ndarray: Sharpened image
+        numpy.ndarray: Sharpened image.
     """
-    pil_img = ensure_pil_image(img)
-    img_array = np.array(pil_img)
+    # Define sharpening kernel
+    sharpen_kernel = np.array([
+        [ 0, -1,  0],
+        [-1,  5, -1],
+        [ 0, -1,  0]
+    ])
 
-    # Create blurred version
-    blurred = gaussian_filter(img_array, sigma=2)
+    # Apply filter using OpenCV
+    sharpened = cv2.filter2D(img, -1, sharpen_kernel)
 
-    # Calculate unsharp mask
-    unsharp_mask = img_array - blurred
-
-    # Apply sharpening
-    sharpened = img_array + strength * unsharp_mask
-
-    # Clip values to valid range
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 def apply_ridge_detection(img: np.ndarray) -> np.ndarray:
