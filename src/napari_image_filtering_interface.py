@@ -274,7 +274,6 @@ class ImageFilterWidget(QWidget):
         """Apply sharpening filter to the current image."""
         self._apply_filter(apply_sharpening)
 
-
     def _apply_ridge_detection(self):
         """Apply ridge detection to the current image."""
         self._apply_filter(apply_ridge_detection)

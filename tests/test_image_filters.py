@@ -22,6 +22,7 @@ from src.napari_image_filters import (
     apply_texture_analysis,
     apply_adaptive_threshold,
     apply_sharpening,
+    apply_ridge_detection,
     sanitize_dimensional_image
 )
 
@@ -106,20 +107,28 @@ def test_apply_adaptive_threshold(sample_images):
 @pytest.mark.unit
 def test_apply_sharpening(sample_images):
     """
-    Test image sharpening with different parameters.
+    Test image sharpening using a convolutional kernel.
     """
-    # Test with default strength
-    sharp = apply_sharpening(sample_images['rgb_pil'])
+    # Convert sample images to NumPy arrays (if not already)
+    rgb_array = np.array(sample_images['rgb_pil'])
+    gray_array = np.array(sample_images['gray_pil'])
+
+    # Test with RGB image
+    sharp = apply_sharpening(rgb_array)
     assert isinstance(sharp, np.ndarray)
-    assert sharp.shape == sample_images['rgb_array'].shape
-    
-    # Test with custom strength
-    sharp_strong = apply_sharpening(sample_images['rgb_pil'], strength=2.0)
-    assert isinstance(sharp_strong, np.ndarray)
-    
+    assert sharp.shape == rgb_array.shape
+    assert sharp.dtype == np.uint8
+
+    # Ensure sharpening has an effect by checking pixel changes
+    assert not np.array_equal(sharp, rgb_array), "Sharpening should modify the image"
+
     # Test with grayscale image
-    gray_sharp = apply_sharpening(sample_images['gray_pil'])
+    gray_sharp = apply_sharpening(gray_array)
     assert isinstance(gray_sharp, np.ndarray)
+    assert gray_sharp.shape == gray_array.shape
+    assert gray_sharp.dtype == np.uint8
+    assert not np.array_equal(gray_sharp, gray_array), "Sharpening should modify the grayscale image"
+
 
 @pytest.mark.unit
 def test_sanitize_dimensional_image(sample_images):
@@ -164,7 +173,8 @@ def test_input_type_handling(sample_images):
         apply_contrast_enhancement,
         apply_texture_analysis,
         apply_adaptive_threshold,
-        apply_sharpening
+        apply_sharpening,
+        apply_ridge_detection
     ]
     
     for func in functions_to_test:
@@ -268,3 +278,12 @@ def test_edge_processing(sample_images):
 
     edge_img = apply_edge_detection(sample_images['rgb_pil'])
     assert isinstance(edge_img, np.ndarray)
+
+@pytest.mark.unit
+def test_ridge_detection(sample_images):
+    """
+    Test ridge detection.
+    """
+    ridges_img = apply_ridge_detection(sample_images['gray_pil'])
+    assert isinstance(ridges_img, np.ndarray)
+    assert ridges_img.ndim == 2
