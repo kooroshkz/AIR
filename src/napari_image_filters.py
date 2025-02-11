@@ -192,7 +192,8 @@ def apply_sharpening(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 
-def apply_ridge_detection(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
+def apply_ridge_detection(
+        img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     """
     Apply ridge detection using a convolutional kernel.
 
