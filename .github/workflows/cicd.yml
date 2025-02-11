@@ -54,6 +54,8 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-format"
+          commit_options: '--amend --no-edit'
+          push_options: '--force-with-lease'
 
   test:
     name: Run Tests
