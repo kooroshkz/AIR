@@ -1,6 +1,11 @@
 name: Python CI/CD Pipeline
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  checks: write
+  statuses: write
+
 jobs:
   lint:
     name: Lint and Format
