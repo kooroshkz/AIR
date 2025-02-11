@@ -165,39 +165,52 @@ def apply_adaptive_threshold(
     return thresh
 
 
-def apply_sharpening(img: np.ndarray) -> np.ndarray:
+def apply_sharpening(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     """
     Apply sharpening using a convolutional kernel.
 
     Args:
-        img (numpy.ndarray): Input image.
+        img (PIL.Image, numpy.ndarray, str): Input image.
 
     Returns:
         numpy.ndarray: Sharpened image.
     """
+    # Convert input to numpy array
+    pil_img = ensure_pil_image(img)
+    img_array = np.array(pil_img).astype(np.float32)
+
     # Define sharpening kernel
     sharpen_kernel = np.array([
         [0, -1, 0],
         [-1, 5, -1],
         [0, -1, 0]
-    ])
+    ]).astype(np.float32)
 
-    # Apply filter using OpenCV
-    sharpened = cv2.filter2D(img, -1, sharpen_kernel)
+    # Apply filter using OpenCV, ensuring src is the converted numpy array
+    sharpened = cv2.filter2D(img_array, -1, sharpen_kernel)
 
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 
-def apply_ridge_detection(img: np.ndarray) -> np.ndarray:
+def apply_ridge_detection(img: Union[Image.Image, np.ndarray, str]) -> np.ndarray:
     """
     Apply ridge detection using a convolutional kernel.
+
+    Args:
+        img (PIL.Image, numpy.ndarray, str): Input image.
+
+    Returns:
+        numpy.ndarray: With ridge detection.
     """
+    pil_img = ensure_pil_image(img)
+    img_array = np.array(pil_img)
+
     ridge_kernel = np.array([
         [-1, -1, -1],
         [-1, 9, -1],
         [-1, -1, -1]
     ])
-    return np.clip(cv2.filter2D(img, -1, ridge_kernel),
+    return np.clip(cv2.filter2D(img_array, -1, ridge_kernel),
                    0, 255).astype(np.uint8)
 
 
