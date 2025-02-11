@@ -21,6 +21,7 @@ from .napari_image_filters import (
     apply_texture_analysis,
     apply_adaptive_threshold,
     apply_sharpening,
+    apply_ridge_detection,
 )
 from .chatgpt       import GPT
 # The exception handles the headless CICD testing
@@ -53,6 +54,7 @@ class ChatWidget(QWidget):
             "texture": apply_texture_analysis,
             "threshold": apply_adaptive_threshold,
             "sharpen": apply_sharpening,
+            "ridge_detection": apply_ridge_detection,
         }
         AI_PROMPT = getenv("AI_PROMPT")
         OPENAI_API_KEY = getenv("OPENAI_API_KEY")
