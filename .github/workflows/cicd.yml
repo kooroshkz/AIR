@@ -11,24 +11,47 @@ jobs:
     name: Lint and Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
+          python-version: "3.12"
+          cache: 'pip'
 
-      - name: Super-Linter
-        uses: github/super-linter@v5
-        env:
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
-      - name: Pylint Quality Check
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install pylint
-          pylint --fail-under=7.0 ${{ steps.check-py-files.outputs.files }}
-        continue-on-error: true
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint autopep8 
+    
+    - name: Check for Python files
+      id: check-py-files
+      shell: bash
+      run: |
+        FILES=$(git ls-files '*.py' | tr '\n' ' ')
+        if [ -n "$FILES" ]; then
+          echo "has_py_files=true" >> $GITHUB_OUTPUT
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+        else
+          echo "has_py_files=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Format code with autopep8
+      if: steps.check-py-files.outputs.has_py_files == 'true'
+      shell: bash
+      run: |
+        autopep8 --in-place --aggressive --aggressive ${{ steps.check-py-files.outputs.files }}
+
+    - name: Analyze code with pylint
+      if: steps.check-py-files.outputs.has_py_files == 'true'
+      shell: bash
+      run: |
+        pylint --fail-under=7.0 ${{ steps.check-py-files.outputs.files }}
+      continue-on-error: true
+        
+    - name: Commit changes
+      if: steps.check-py-files.outputs.has_py_files == 'true'
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Auto-format"
 
   test:
     name: Run Tests
