@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "napari-air-plugin"
+description = "Just another cell tool"
+version = "0.1.1"
+requires-python = ">=3.8"
+dependencies = [
+    "napari[all]>=0.4.16",
+    "numpy>=1.20.0",
+    "pillow>=8.0.0",
+    "qtpy",
+    "mypy",
+    "types-Pillow",
+    "opencv-python-headless",
+    "scikit-image",
+    "scipy",
+    "openai",
+    "python-dotenv",
+    "typing",
+    "pydantic",
+    "sounddevice",
+    "wave",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-dotenv",
+    "pytest-qt",
+    "pytest-benchmark",
+    "setuptools",
+    "wheel",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.entry-points."napari.plugin"]
+"napari-image-filters" = "src.napari_image_filtering_interface"
+
+# configurations for development tools
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.pylint.messages_control]
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "C0330",  # bad-continuation
+    "C0326",  # bad-whitespace
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=src"
