@@ -135,8 +135,8 @@ def test_history_stack_management(widget, image_layer):
     "_apply_contrast_enhancement",
     "_apply_texture_analysis",
     "_apply_adaptive_threshold",
-    "_apply_sharpening"
-    "apply_ridge_detection"
+    "_apply_sharpening",
+    "_apply_ridge_detection"
 ])
 def test_filter_methods(widget, image_layer, filter_func):
     """Test that filter methods don't raise exceptions."""
