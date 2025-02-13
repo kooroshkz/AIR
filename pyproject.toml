@@ -36,6 +36,14 @@ dev = [
     "wheel",
 ]
 
+# If you want to build the docs locally with mkdocs serve
+docs = [
+"mkdocs-minify-plugin",
+"mkdocs",
+"mkdocs-material",
+"mkdocs-material[imaging]",
+]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
