@@ -1,0 +1,119 @@
+site_name: AIR Plugin
+site_url: https://johk3.github.io/AIR/
+repo_url: https://github.com/johk3/AIR
+repo_name: johk3/AIR
+edit_uri: edit/main/docs/
+
+extra_css:
+  - stylesheets/dark.css
+  - stylesheets/light.css
+# Theme customization
+theme:
+  name: material
+  language: en
+  
+  features:
+    - navigation.instant  # Faster page loading
+    - navigation.tracking # URL tracking
+    - navigation.tabs    # Top-level sections as tabs
+    - navigation.sections # Grouping of sections
+    - navigation.expand  # Expand all sections
+    - navigation.indexes # Section index pages
+    - toc.follow        # Auto-scroll table of contents
+    - search.suggest    # Search suggestions
+    - search.highlight  # Search highlighting
+    - search.share      # Search sharing
+    - content.code.copy # Copy code button
+    - content.action.edit # Edit button
+    
+  # Visual customization
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: pink
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep black
+      accent: pink
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+        
+  # Icons and fonts
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - footnotes
+  - tables
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+# Plugins
+plugins:
+  - search
+  - social
+  - tags
+  - minify:
+      minify_html: true
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/johk3/AIR
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+  consent:
+    title: Cookie consent
+    description: >- 
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+
+# Navigation structure
+nav:
+  - Home: 
+    - Overview: index.md
+    - Changelog: changelog.md
+  - Getting Started:
+    - Quick Start: getting-started.md
+    - Installation: installation.md
+    - Configuration: configuration.md
+  - Features:
+    - Core Features: features/index.md
+    - Advanced Usage: features/advanced.md
+  - API Reference:
+    - Overview: api/index.md
+    - Endpoints: api/endpoints.md
+  - About:
+    - Project: about.md
+    - Contributing: contributing.md
+    - License: license.md
