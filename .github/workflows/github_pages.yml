@@ -9,7 +9,7 @@ on:
       - 'mkdocs.yml'
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -41,8 +41,5 @@ jobs:
         run: mkdocs build --strict
 
       - name: Deploy to GitHub Pages
-        run: |
-          mkdocs gh-deploy --force --remote-name origin --remote-branch gh-pages --message "Deploy: ${{ github.sha }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdocs gh-deploy --force
 

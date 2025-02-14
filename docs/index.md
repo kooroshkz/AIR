@@ -1,6 +1,6 @@
 # Overview
 
-Welcome to the AIR Plugin documentation! Insert something here....
+Welcome to the AIR Plugin documentation! Insert something here...
 
 ## Key Features
 
