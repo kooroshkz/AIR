@@ -18,4 +18,7 @@ Afterwards you can add or modify the contents of the docs folder to create or ch
 If you would like to see the changes made to the document locally use
 ```bash
 mkdocs serve
+
+mkdocs gh-deploy # Only run this when everything is finalized
+# because this pushes the documentation to the website
 ```
