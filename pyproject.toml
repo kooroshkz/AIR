@@ -32,6 +32,7 @@ dev = [
     "pytest-dotenv",
     "pytest-qt",
     "pytest-benchmark",
+    "PyQt5",
     "setuptools",
     "wheel",
 ]
