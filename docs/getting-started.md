@@ -4,9 +4,11 @@ This guide will help you get started with the AIR Plugin quickly and efficiently
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip package manager
-- Basic understanding of AI concepts
+
+## Installation
+You can find a comprehensive installation guide here: [Installation](installation.md)
 
 ## Contributing to the Documentation
 First install the necessary packages to use mkdoc
