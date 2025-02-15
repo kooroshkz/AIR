@@ -1,26 +1,23 @@
-# Quick Start
+# Getting Started with AIR Plugin
 
-This guide will help you get started with the AIR Plugin quickly and efficiently.
+This guide helps you set up and use the **AIR Plugin** quickly.
 
 ## Prerequisites
-
-- Python 3.10 or higher
-- pip package manager
+- Python **3.8+**
+- **Napari** (image visualization tool)
+- `pip` for package installation
 
 ## Installation
-You can find a comprehensive installation guide here: [Installation](installation.md)
+Follow the [Installation Guide](installation.md) to set up AIR Plugin.
 
-## Contributing to the Documentation
-First install the necessary packages to use mkdoc
-```bash
-pip install -e .[docs]
-```
-Afterwards you can add or modify the contents of the docs folder to create or change the current documentation.
+## Usage
+1. Run the application:
+   ```bash
+   python main.py
+2. Load an image in Napari.
+3. Open the Image Filters dock widget.
+4. Use either:
+- The GUI controls for filtering.
+- Voice commands for AI-powered interaction.
 
-If you would like to see the changes made to the document locally use
-```bash
-mkdocs serve
-
-mkdocs gh-deploy # Only run this when everything is finalized
-# because this pushes the documentation to the website
-```
+For detailed instructions, check the [User Guide](user-guide.md).

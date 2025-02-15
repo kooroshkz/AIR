@@ -1,38 +1,40 @@
 # Installation Guide
 
 ## System Requirements
+- **OS**: Windows 10+, macOS 10.15+, or Linux
+- **Python**: 3.8 or higher
 
-- Operating System: Windows 10+, macOS 10.15+, or Linux
-- Python: Version 3.10 or higher
+## Installation Steps
 
-## Installation Methods
-
-### Build From Source
-
+### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/johk3/AIR.git
+git clone https://github.com/Johk3/AIR.git
 cd AIR
-
-# Optional(if you already use conda or something else)
-# Setup the virtual environment
-python -m venv .venv
-# Activate the virtual environment
-source .venv/bin/activate
-
-
-# Install all required packages for development
-pip install -e .[dev]
 ```
 
-Add all the necessary API keys and parameters to the .env file by copying the .env.example to .env and then changing .env.
+### 2️⃣ Create a Virtual Environment
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+```
+
+### 3️⃣ Install Dependencies
+```bash
+pip install -e .[dev]
+```
+Alternatively:
+```bash
+pip install -r requirements.txt
+```
+
+### 4️⃣ Configure Environment Variables
+Copy the `.env.example` file and edit it:
 ```bash
 cp .env.example .env
 ```
 
-Afterwards you can run the program with 
+### 5️⃣ Run the Application
 ```bash
 python main.py
 ```
-
-## Contributing
-For further information about contributing visit: [How to Contribute](contributing.md)
+For troubleshooting, see [User Guide](user-guide.md).

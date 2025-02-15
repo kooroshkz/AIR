@@ -1,13 +1,18 @@
-# Overview
+# AIR Plugin Documentation
 
-Welcome to the AIR Plugin documentation! Insert something here...
+Welcome to the **AIR Plugin** documentation. This plugin allows biologists to control image analysis with voice commands, making cell segmentation and image enhancement more intuitive.
 
-## Key Features
+## Features
+- Voice-controlled image filtering
+- AI-assisted interaction
+- Multiple image enhancement techniques
 
-- Powerful AI capabilities
-- ...
 ## Quick Links
-
 - [Getting Started](getting-started.md)
+- [Installation](installation.md)
+- [User Guide](user-guide.md)
+- [API Reference](api.md)
 - [How to Contribute](contributing.md)
-- [GitHub Repository](https://github.com/johk3/AIR)
+
+## Repository
+Find the source code on GitHub: [Johk3/AIR](https://github.com/Johk3/AIR)

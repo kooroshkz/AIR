@@ -1,14 +1,13 @@
 # Changelog
 
 ## [0.1.1] - 2025-01-12
-
-### Added
-- Core functionality implementation
-- Basic plugin endpoints for image manipulation
+### 🔥 Added
+- Initial implementation of core filters
+- Basic AI-powered commands
 - Documentation structure
 
-### Changed
-- N/A (Initial release)
+### 🔄 Changed
+- Updated UI elements for better user experience
 
-### Fixed
-- N/A (Initial release)
+### 🐞 Fixed
+- Minor bug fixes in edge detection
