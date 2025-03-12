@@ -196,10 +196,14 @@ class ImageFilterWidget(QWidget):
             original_data = layer.data.copy()
 
             # Preprocess for filters requiring grayscale input
-            if filter_func in [apply_grayscale, apply_texture_analysis, apply_adaptive_threshold]:
+            if filter_func in [
+                    apply_grayscale,
+                    apply_texture_analysis,
+                    apply_adaptive_threshold]:
 
                 # RGB & RGBA images
-                if original_data.ndim == 3 and original_data.shape[2] in [3, 4]:
+                if original_data.ndim == 3 and original_data.shape[2] in [
+                        3, 4]:
                     original_data = np.mean(original_data, axis=2)
 
                 # Single-channel 3D array
@@ -207,9 +211,13 @@ class ImageFilterWidget(QWidget):
                     original_data = original_data.squeeze()
 
             # Handle multi-dimensional data
-            if filter_func in [apply_edge_enhance, apply_edge_detection, otsu_thresholding]:
+            if filter_func in [
+                    apply_edge_enhance,
+                    apply_edge_detection,
+                    otsu_thresholding]:
                 # Check if input is 3D stack or single image (2D)
-                if original_data.ndim == 3 and original_data.shape[-1] not in [3, 4]:
+                if original_data.ndim == 3 and original_data.shape[-1] not in [
+                        3, 4]:
                     filtered_slices = []
                     for i in range(original_data.shape[0]):
                         # Apply filter to individual 2D slices
@@ -281,6 +289,7 @@ class ImageFilterWidget(QWidget):
     def _apply_ridge_detection(self):
         """Apply ridge detection to the current image."""
         self._apply_filter(apply_ridge_detection)
+
     def _apply_otsu_thresholding(self):
         self._apply_filter(otsu_thresholding)
 
