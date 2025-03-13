@@ -90,13 +90,21 @@ def apply_contrast_enhancement(
 
     return enhanced
 
-def otsu_thresholding(img: np.ndarray) -> np.ndarray:
-    img = img.astype(np.uint16)  
 
-    #otsu threshold
-    _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    
-    #clean image
+def otsu_thresholding(img: np.ndarray) -> np.ndarray:
+    img = img.astype(np.uint16)
+
+    if len(img.shape) == 3:  # not greyscale
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    elif len(img.shape) != 2:
+        raise TypeError(
+            "Image argument to otsu_thresholding must be of type mxnx3 or mxn")
+
+    # otsu threshold
+    _, thresholded = cv2.threshold(
+        img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # clean image
     kernel = np.ones((5, 5), np.uint8)
     mask = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernel)
 
