@@ -294,10 +294,13 @@ class ImageFilterWidget(QWidget):
     def _apply_otsu_thresholding(self):
         """Otsu thresholding filter for cell segmentation (with 5x5 ones kernel applied)"""
         self._apply_filter(otsu_thresholding)
+
     def _apply_otsu_thresholding_no_mask(self):
         self._apply_filter(otsu_thresholding_no_mask)
+
     def _apply_cellpose_cyto(self):
         self._apply_filter(cellpose_cyto)
+
     def _apply_cellpose_nucleus(self):
         self._apply_filter(cellpose_nuclei)
 

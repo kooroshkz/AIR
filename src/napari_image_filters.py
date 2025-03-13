@@ -22,6 +22,7 @@ from scipy.ndimage import gaussian_filter
 from cellpose import models
 from .cellpose_utils import masks_to_segmentation
 
+
 def apply_gaussian_blur(
     img: Union[Image.Image, np.ndarray, str], radius: float = 2.0
 ) -> np.ndarray:
@@ -110,10 +111,13 @@ def otsu_thresholding(img: np.ndarray) -> np.ndarray:
 
     return mask
 
+
 def otsu_thresholding_no_mask(img: np.ndarray) -> np.ndarray:
-    img = img.astype(np.uint16)  
-    _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    img = img.astype(np.uint16)
+    _, thresholded = cv2.threshold(
+        img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresholded
+
 
 def apply_texture_analysis(
     img: Union[Image.Image, np.ndarray, str], radius: int = 3, n_points: int = 8
@@ -457,7 +461,8 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
 
     return gray_img
 
-def cellpose_cyto(image : np.ndarray) -> np.ndarray:
+
+def cellpose_cyto(image: np.ndarray) -> np.ndarray:
 
     model = models.Cellpose(model_type='cyto')
     channels = [0, 0]
@@ -465,7 +470,8 @@ def cellpose_cyto(image : np.ndarray) -> np.ndarray:
 
     return masks_to_segmentation(masks)
 
-def cellpose_nuclei(image : np.ndarray) -> np.ndarray:
+
+def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
 
     model = models.Cellpose(model_type='nuclei')
     channels = [1, 0]
