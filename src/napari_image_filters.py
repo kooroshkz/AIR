@@ -111,7 +111,7 @@ def otsu_thresholding(img: np.ndarray) -> np.ndarray:
     return mask
 
 def otsu_thresholding_no_mask(img: np.ndarray) -> np.ndarray:
-    img = img.astype(np.uint16)  
+    img = img.astype(np.uint16)
     _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresholded
 

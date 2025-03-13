@@ -203,7 +203,7 @@ class ImageFilterWidget(QWidget):
             if filter_func in [
                     apply_grayscale,
                     apply_texture_analysis,
-                    apply_adaptive_threshold]:
+                    apply_adaptive_threshold, otsu_thresholding, otsu_thresholding_no_mask]:
 
                 # RGB & RGBA images
                 if original_data.ndim == 3 and original_data.shape[2] in [
