@@ -12,13 +12,15 @@ Key Features:
 - Edge detection
 """
 
-from typing import Union, Tuple
+from typing import List, Union, Tuple
+import typing
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 import cv2
 from skimage.feature import local_binary_pattern
 from scipy.ndimage import gaussian_filter
-
+from cellpose import models
+from .cellpose_utils import masks_to_segmentation
 
 def apply_gaussian_blur(
     img: Union[Image.Image, np.ndarray, str], radius: float = 2.0
@@ -91,11 +93,6 @@ def apply_contrast_enhancement(
 def otsu_thresholding(img: np.ndarray) -> np.ndarray:
     img = img.astype(np.uint16)  
 
-    if len(img.shape) == 3: #not greyscale
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    elif len(img.shape) != 2:
-        raise TypeError("Image argument to otsu_thresholding must be of type mxnx3 or mxn")
-
     #otsu threshold
     _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
@@ -105,6 +102,10 @@ def otsu_thresholding(img: np.ndarray) -> np.ndarray:
 
     return mask
 
+def otsu_thresholding_no_mask(img: np.ndarray) -> np.ndarray:
+    img = img.astype(np.uint16)  
+    _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    return thresholded
 
 def apply_texture_analysis(
     img: Union[Image.Image, np.ndarray, str], radius: int = 3, n_points: int = 8
@@ -447,3 +448,19 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
         gray_img = input_array
 
     return gray_img
+
+def cellpose_cyto(image : np.ndarray) -> np.ndarray:
+
+    model = models.Cellpose(model_type='cyto')
+    channels = [0, 0]
+    masks, flows, styles, diams = model.eval(image, channels=channels)
+
+    return masks_to_segmentation(masks)
+
+def cellpose_nuclei(image : np.ndarray) -> np.ndarray:
+
+    model = models.Cellpose(model_type='nuclei')
+    channels = [1, 0]
+    masks, flows, styles, diams = model.eval(image, channels=channels)
+
+    return masks_to_segmentation(masks)

@@ -15,7 +15,8 @@ from .napari_image_filters import (
     apply_edge_enhance, apply_edge_detection,
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
-    apply_sharpening, apply_ridge_detection, otsu_thresholding
+    apply_sharpening, apply_ridge_detection, otsu_thresholding,
+    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
 )
 
 from .chat_interface import (
@@ -88,7 +89,10 @@ class ImageFilterWidget(QWidget):
             ("Adaptive Threshold", self._apply_adaptive_threshold),
             ("Sharpen", self._apply_sharpening),
             ("Ridge Detection", self._apply_ridge_detection),
-            ("Cell segmentation (BETA)", self._apply_otsu_thresholding)
+            ("Cell segmentation (BETA)", self._apply_otsu_thresholding),
+            ("Cell segmentation 2 (BETA)", self._apply_otsu_thresholding_no_mask),
+            ("cytoplasm segmentation (BETA)", self._apply_cellpose_cyto),
+            ("nucleus segmentation (BETA)", self._apply_cellpose_nucleus),
         ]
 
         for name, method in filter_buttons:
@@ -196,7 +200,8 @@ class ImageFilterWidget(QWidget):
             original_data = layer.data.copy()
 
             # Preprocess for filters requiring grayscale input
-            if filter_func in [apply_grayscale, apply_texture_analysis, apply_adaptive_threshold]:
+            if filter_func in [apply_grayscale, apply_texture_analysis, apply_adaptive_threshold, 
+                               otsu_thresholding, otsu_thresholding_no_mask]:
 
                 # RGB & RGBA images
                 if original_data.ndim == 3 and original_data.shape[2] in [3, 4]:
@@ -207,7 +212,7 @@ class ImageFilterWidget(QWidget):
                     original_data = original_data.squeeze()
 
             # Handle multi-dimensional data
-            if filter_func in [apply_edge_enhance, apply_edge_detection, otsu_thresholding]:
+            if filter_func in [apply_edge_enhance, apply_edge_detection]:
                 # Check if input is 3D stack or single image (2D)
                 if original_data.ndim == 3 and original_data.shape[-1] not in [3, 4]:
                     filtered_slices = []
@@ -281,8 +286,16 @@ class ImageFilterWidget(QWidget):
     def _apply_ridge_detection(self):
         """Apply ridge detection to the current image."""
         self._apply_filter(apply_ridge_detection)
+
     def _apply_otsu_thresholding(self):
+        """Otsu thresholding filter for cell segmentation (with 5x5 ones kernel applied)"""
         self._apply_filter(otsu_thresholding)
+    def _apply_otsu_thresholding_no_mask(self):
+        self._apply_filter(otsu_thresholding_no_mask)
+    def _apply_cellpose_cyto(self):
+        self._apply_filter(cellpose_cyto)
+    def _apply_cellpose_nucleus(self):
+        self._apply_filter(cellpose_nuclei)
 
 
 def napari_experimental_provide_dock_widget():
