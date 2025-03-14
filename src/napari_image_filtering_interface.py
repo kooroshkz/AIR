@@ -130,7 +130,8 @@ class ImageFilterWidget(QWidget):
         # Check if any layers are selected
         if not selected_layers:
             # pdb.set_trace()
-            self.chat_widget.add_to_chat("[ERROR] please select an image layer")
+            self.chat_widget.add_to_chat(
+                "[ERROR] please select an image layer")
             raise ValueError("Please select an image layer")
 
         # Find the first image layer
@@ -212,7 +213,9 @@ class ImageFilterWidget(QWidget):
             if filter_func in [
                     apply_grayscale,
                     apply_texture_analysis,
-                    apply_adaptive_threshold, otsu_thresholding, otsu_thresholding_no_mask]:
+                    apply_adaptive_threshold,
+                    otsu_thresholding,
+                    otsu_thresholding_no_mask]:
 
                 # RGB & RGBA images
                 if original_data.ndim == 3 and original_data.shape[2] in [

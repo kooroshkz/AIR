@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import new_worker_qthread
 
+
 class WorkflowWidget(QWidget):
     """
     Widget for interacting with different workflows
@@ -30,20 +31,21 @@ class WorkflowWidget(QWidget):
         self.viewer = viewer
         self.filter_widget = filter_widget
 
-        self.main_wf_layout = QVBoxLayout() #the main top level widget for workflows
-        self.buttons = QHBoxLayout() #buttons for interacting with workflows
-        self.recording_wf_layout = QVBoxLayout() #ongoing recordings of workflows
-        self.saved_wf_layout = QVBoxLayout() #already saved workflows
-        self.wf_name_menu = QHBoxLayout() #menu for choosing the wf name
+        self.main_wf_layout = QVBoxLayout()  # the main top level widget for workflows
+        self.buttons = QHBoxLayout()  # buttons for interacting with workflows
+        self.recording_wf_layout = QVBoxLayout()  # ongoing recordings of workflows
+        self.saved_wf_layout = QVBoxLayout()  # already saved workflows
+        self.wf_name_menu = QHBoxLayout()  # menu for choosing the wf name
 
         self.setup_ui()
         self.recording = False
-        
-        #the recorded workflow, all actions get recorded here
-        #stored as dict for automatic index management when removing or adding items to the workflow
-        self.current_workflow : Dict[int, Callable] = {}
-        self.curr_wf_name : str = "" #it gets filled in by either save function, or set name
-        self.workflows : Dict[int, Dict[int, Callable]] = {}
+
+        # the recorded workflow, all actions get recorded here
+        # stored as dict for automatic index management when removing or adding
+        # items to the workflow
+        self.current_workflow: Dict[int, Callable] = {}
+        self.curr_wf_name: str = ""  # it gets filled in by either save function, or set name
+        self.workflows: Dict[int, Dict[int, Callable]] = {}
 
     def setup_ui(self):
         """Configure the widget's user interface."""
@@ -64,7 +66,7 @@ class WorkflowWidget(QWidget):
         )
         record_workflow_btn.clicked.connect(self.start_workflow)
 
-        #stop recording the workflow
+        # stop recording the workflow
         stop_workflow_btn = QPushButton("stop")
         stop_workflow_btn.setStyleSheet(
             """
@@ -112,7 +114,7 @@ class WorkflowWidget(QWidget):
             """
         )
         wf_name_btn.clicked.connect(self.set_wf_name)
-         
+
         self.buttons.addWidget(record_workflow_btn)
         self.buttons.addWidget(stop_workflow_btn)
         self.buttons.addWidget(wf_name_btn)
@@ -127,15 +129,17 @@ class WorkflowWidget(QWidget):
     def start_workflow(self):
         if not self.recording:
             self.reset()
-            self.recording=True
-            self.recording_wf_layout.addWidget(QLabel("Recording new workflow"))
-            self.recording_wf_layout.addWidget(QLabel("press on event to delete"))
-            
+            self.recording = True
+            self.recording_wf_layout.addWidget(
+                QLabel("Recording new workflow"))
+            self.recording_wf_layout.addWidget(
+                QLabel("press on event to delete"))
+
     def stop_recording_wf(self):
         self.recording = False
 
     def save_workflow(self):
-        #save the current pipeline state
+        # save the current pipeline state
         if not self._check_wf_exists():
             return
 
@@ -155,7 +159,7 @@ class WorkflowWidget(QWidget):
         wf_delete_button = QPushButton("delete")
 
         wf_button.clicked.connect(partial(self.apply_wf, wf_index))
-        wf_delete_button.clicked.connect(partial(self.remove_wf, wf_area)) 
+        wf_delete_button.clicked.connect(partial(self.remove_wf, wf_area))
 
         wf_area.addWidget(wf_button)
         wf_area.addWidget(wf_delete_button)
@@ -180,12 +184,12 @@ class WorkflowWidget(QWidget):
         wf_area.deleteLater()
         self.repaint()  # Ensure the UI redraws fully
 
-    def add_event_to_workflow(self, event : Callable):
+    def add_event_to_workflow(self, event: Callable):
         if self.recording:
             self.current_workflow[len(self.current_workflow)] = event
             lb = QPushButton(f"event {len(self)}: {event.__name__}")
             lb.setStyleSheet(
-            """
+                """
             QPushButton {
                 background-color: #0366d6;
                 color: white;
@@ -197,10 +201,13 @@ class WorkflowWidget(QWidget):
             }
             """
             )
-            lb.clicked.connect(partial(self.remove_event_wf, len(self.current_workflow) - 1, lb))
+            lb.clicked.connect(
+                partial(
+                    self.remove_event_wf, len(
+                        self.current_workflow) - 1, lb))
             self.recording_wf_layout.addWidget(lb)
 
-    def remove_event_wf(self, pos : int, widget : QPushButton):
+    def remove_event_wf(self, pos: int, widget: QPushButton):
         assert len(self.current_workflow) != 0
         del self.current_workflow[pos]
         self.recording_wf_layout.removeWidget(widget)
@@ -216,11 +223,12 @@ class WorkflowWidget(QWidget):
     def _check_wf_exists(self):
         """Returns true if there are any actions in the current pipeline"""
         if len(self.current_workflow) == 0:
-            self.filter_widget.chat_widget.add_to_chat("[Error] Cannot save empty workflow")   
+            self.filter_widget.chat_widget.add_to_chat(
+                "[Error] Cannot save empty workflow")
             return False
         return True
 
-    def apply_wf(self, wf_index : int):
+    def apply_wf(self, wf_index: int):
         wf = self.workflows[wf_index]
         for filter_event in wf:
             self.filter_widget._apply_filter(wf[filter_event])

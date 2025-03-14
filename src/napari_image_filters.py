@@ -114,7 +114,8 @@ def otsu_thresholding(img: np.ndarray) -> np.ndarray:
 
 def otsu_thresholding_no_mask(img: np.ndarray) -> np.ndarray:
     img = img.astype(np.uint16)
-    _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    _, thresholded = cv2.threshold(
+        img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresholded
 
 
@@ -460,14 +461,16 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
 
     return gray_img
 
-def cellpose_cyto(image : np.ndarray) -> np.ndarray:
+
+def cellpose_cyto(image: np.ndarray) -> np.ndarray:
     model = models.Cellpose(model_type='cyto')
     channels = [0, 0]
     masks, flows, styles, diams = model.eval(image, channels=channels)
 
     return masks_to_segmentation(masks)
 
-def cellpose_nuclei(image : np.ndarray) -> np.ndarray:
+
+def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
     model = models.Cellpose(model_type='nuclei')
     channels = [1, 0]
     masks, flows, styles, diams = model.eval(image, channels=channels)
