@@ -23,6 +23,10 @@ from .chat_interface import (
     ChatWidget
 )
 
+from .workflows import (
+    WorkflowWidget
+)
+
 
 class ImageFilterWidget(QWidget):
     """
@@ -104,6 +108,10 @@ class ImageFilterWidget(QWidget):
         self.chat_widget = ChatWidget(viewer, self)
         layout.addWidget(self.chat_widget)
 
+        # Initialize the history view
+        self.workflow = WorkflowWidget(viewer, self)
+        layout.addWidget(self.workflow)
+
         self.setLayout(layout)
 
     def _get_current_layer(self):
@@ -122,6 +130,7 @@ class ImageFilterWidget(QWidget):
         # Check if any layers are selected
         if not selected_layers:
             # pdb.set_trace()
+            self.chat_widget.add_to_chat("[ERROR] please select an image layer")
             raise ValueError("Please select an image layer")
 
         # Find the first image layer
@@ -242,7 +251,10 @@ class ImageFilterWidget(QWidget):
             filter_name = filter_func.__name__.replace(
                 "apply_", "").replace("_", " ").title()
             new_layer_name = f"{layer.name} | {filter_name}"
+
             self.viewer.add_image(filtered_array, name=new_layer_name)
+
+            self.workflow.add_event_to_workflow(filter_func)
 
         except Exception as e:
             print(f"Error applying filter: {e}")

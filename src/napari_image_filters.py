@@ -458,7 +458,7 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
     return gray_img
 
 def cellpose_cyto(image : np.ndarray) -> np.ndarray:
-
+    print("[LOG] cellpose_cyto")
     model = models.Cellpose(model_type='cyto')
     channels = [0, 0]
     masks, flows, styles, diams = model.eval(image, channels=channels)
@@ -466,7 +466,7 @@ def cellpose_cyto(image : np.ndarray) -> np.ndarray:
     return masks_to_segmentation(masks)
 
 def cellpose_nuclei(image : np.ndarray) -> np.ndarray:
-
+    print("[LOG] cellpose_nuclei")
     model = models.Cellpose(model_type='nuclei')
     channels = [1, 0]
     masks, flows, styles, diams = model.eval(image, channels=channels)
