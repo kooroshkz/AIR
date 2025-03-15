@@ -1,0 +1,9 @@
+{
+    "name": "need to add a workflow object so we can store names",
+    "len": 3,
+    "pipeline": {
+        "0": "apply_gaussian_blur",
+        "1": "apply_contrast_enhancement",
+        "2": "otsu_thresholding"
+    }
+}

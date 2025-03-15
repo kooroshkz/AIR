@@ -12,7 +12,7 @@ Key Features:
 - Edge detection
 """
 
-from typing import List, Union, Tuple
+from typing import Callable, List, Union, Tuple
 import typing
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
@@ -21,6 +21,9 @@ from skimage.feature import local_binary_pattern
 from scipy.ndimage import gaussian_filter
 from cellpose import models
 from .cellpose_utils import masks_to_segmentation
+
+#global storage of all available functions
+IMG_FUNCTIONS : List[Callable] = []
 
 
 def apply_gaussian_blur(
@@ -476,3 +479,13 @@ def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
     masks, flows, styles, diams = model.eval(image, channels=channels)
 
     return masks_to_segmentation(masks)
+
+
+IMG_FUNCTIONS.extend([
+apply_grayscale, apply_saturation,
+apply_edge_enhance, apply_edge_detection,
+apply_gaussian_blur, apply_contrast_enhancement,
+apply_texture_analysis, apply_adaptive_threshold,
+apply_sharpening, apply_ridge_detection, otsu_thresholding,
+otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
+])

@@ -1,9 +1,12 @@
 from functools import partial
+import pickle
+from importlib.metadata import files
 from typing import Callable, Dict, List
 from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
 from napari._qt.widgets.qt_viewer_dock_widget import QtCustomTitleBar
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
+    QFileDialog,
     QInputDialog,
     QLabel,
     QWidget,
@@ -14,7 +17,12 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QTextEdit
 )
-from superqt.utils import new_worker_qthread
+import json
+
+class Pipeline():
+    def __init__(self, pipeline_id : str) -> None:
+        self.workflow : Dict[int, Callable] = {}
+        self.name : str = f"pipeline {pipeline_id}"
 
 
 class WorkflowWidget(QWidget):
@@ -140,7 +148,7 @@ class WorkflowWidget(QWidget):
 
     def save_workflow(self):
         # save the current pipeline state
-        if not self._check_wf_exists():
+        if not self._check_wf_exists("Cannot save empty workflow"):
             return
 
         self.workflows[len(self.workflows)] = self.current_workflow
@@ -157,13 +165,35 @@ class WorkflowWidget(QWidget):
         wf_area = QHBoxLayout()
         wf_button = QPushButton(wf_name)
         wf_delete_button = QPushButton("delete")
+        wf_export_button = QPushButton("export to file")
 
         wf_button.clicked.connect(partial(self.apply_wf, wf_index))
         wf_delete_button.clicked.connect(partial(self.remove_wf, wf_area))
+        wf_export_button.clicked.connect(partial(self.export_wf, wf_index))
 
         wf_area.addWidget(wf_button)
         wf_area.addWidget(wf_delete_button)
+        wf_area.addWidget(wf_export_button)
         self.saved_wf_layout.addLayout(wf_area)
+
+    def export_wf(self, wf_index):
+        assert wf_index in self.workflows
+        file_path, _ = QFileDialog.getSaveFileName(self, "save to file", ".")
+        print(file_path)
+        print(wf_index)
+
+        if not file_path:
+            return
+
+        wf = self.workflows[wf_index]
+        wf_json = {}
+        wf_json["name"] = "need to add a workflow object so we can store names"
+        wf_json["len"] = len(wf)
+        wf_json["pipeline"] = {key : funct.__name__ for key, funct in wf.items()}
+
+        with open(file_path, 'w') as fp:
+            json.dump(wf_json, fp, indent = 4)
+         
 
     def remove_wf(self, wf_area):
         while wf_area.count():
@@ -220,11 +250,11 @@ class WorkflowWidget(QWidget):
         if ok:
             self.curr_wf_name = text
 
-    def _check_wf_exists(self):
+    def _check_wf_exists(self, message : str):
         """Returns true if there are any actions in the current pipeline"""
         if len(self.current_workflow) == 0:
             self.filter_widget.chat_widget.add_to_chat(
-                "[Error] Cannot save empty workflow")
+                f"[Error] {message}")
             return False
         return True
 
