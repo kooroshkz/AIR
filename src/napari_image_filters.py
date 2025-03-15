@@ -479,21 +479,24 @@ def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
 
     return masks_to_segmentation(masks)
 
-def split_channels(img : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def split_channels(
+        img: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert len(img.shape) == 3
     r = img.copy()
-    r[:,:,0] = 0
-    r[:,:,1] = 0
+    r[:, :, 0] = 0
+    r[:, :, 1] = 0
 
     g = img.copy()
-    g[:,:,0] = 0    
-    g[:,:,2] = 0    
+    g[:, :, 0] = 0
+    g[:, :, 2] = 0
 
     b = img.copy()
-    b[:,:,1] = 0    
-    b[:,:,2] = 0    
+    b[:, :, 1] = 0
+    b[:, :, 2] = 0
 
     return (r, g, b)
+
 
 IMG_FUNCTIONS.extend([
     apply_grayscale, apply_saturation,
