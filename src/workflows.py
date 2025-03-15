@@ -19,11 +19,23 @@ from qtpy.QtWidgets import (
 )
 import json
 
+#pipeline class so that the name can stay coupled to the original pipeline system without needing a rewrite
 class Pipeline():
-    def __init__(self, pipeline_id : str) -> None:
+    def __init__(self) -> None:
         self.workflow : Dict[int, Callable] = {}
-        self.name : str = f"pipeline {pipeline_id}"
-
+        self.name : str = ""
+    def __len__(self):
+        return len(self.workflow)
+    def __getitem__(self, key):
+        return self.workflow[key]
+    def __setitem__(self, key, value):
+        self.workflow[key] = value
+    def __delitem__(self, key):
+        del self.workflow[key]
+    def __contains__(self, key):
+        return key in self.workflow
+    def __iter__(self):
+        return iter(self.workflow)
 
 class WorkflowWidget(QWidget):
     """
@@ -51,9 +63,9 @@ class WorkflowWidget(QWidget):
         # the recorded workflow, all actions get recorded here
         # stored as dict for automatic index management when removing or adding
         # items to the workflow
-        self.current_workflow: Dict[int, Callable] = {}
-        self.curr_wf_name: str = ""  # it gets filled in by either save function, or set name
-        self.workflows: Dict[int, Dict[int, Callable]] = {}
+        self.wf_idx = 0
+        self.current_workflow : Pipeline = Pipeline()
+        self.workflows: Dict[int, Pipeline] = {}
 
     def setup_ui(self):
         """Configure the widget's user interface."""
@@ -128,6 +140,10 @@ class WorkflowWidget(QWidget):
         self.buttons.addWidget(wf_name_btn)
         self.buttons.addWidget(save_workflow_btn)
 
+        import_wf_btn = QPushButton("Import workflow")
+        import_wf_btn.clicked.connect(self.import_wf)
+
+        self.main_wf_layout.addWidget(import_wf_btn)
         self.main_wf_layout.addLayout(self.buttons)
         self.main_wf_layout.addLayout(self.recording_wf_layout)
         self.main_wf_layout.addLayout(self.saved_wf_layout)
@@ -151,19 +167,14 @@ class WorkflowWidget(QWidget):
         if not self._check_wf_exists("Cannot save empty workflow"):
             return
 
-        self.workflows[len(self.workflows)] = self.current_workflow
-        self.reset()
-        self.recording = False
+        if self.current_workflow.name == "":
+            self.current_workflow.name = f"workflow {len(self.workflows)}"
 
+        self.workflows[len(self.workflows)] = self.current_workflow
         wf_index = len(self.workflows) - 1
 
-        if not self.curr_wf_name:
-            wf_name = f"workflow {wf_index}"
-        else:
-            wf_name = self.curr_wf_name
-
         wf_area = QHBoxLayout()
-        wf_button = QPushButton(wf_name)
+        wf_button = QPushButton(self.current_workflow.name)
         wf_delete_button = QPushButton("delete")
         wf_export_button = QPushButton("export to file")
 
@@ -176,24 +187,33 @@ class WorkflowWidget(QWidget):
         wf_area.addWidget(wf_export_button)
         self.saved_wf_layout.addLayout(wf_area)
 
+        self.recording = False
+        self.reset()
+
     def export_wf(self, wf_index):
         assert wf_index in self.workflows
         file_path, _ = QFileDialog.getSaveFileName(self, "save to file", ".")
-        print(file_path)
-        print(wf_index)
-
         if not file_path:
             return
 
         wf = self.workflows[wf_index]
-        wf_json = {}
-        wf_json["name"] = "need to add a workflow object so we can store names"
-        wf_json["len"] = len(wf)
-        wf_json["pipeline"] = {key : funct.__name__ for key, funct in wf.items()}
 
-        with open(file_path, 'w') as fp:
-            json.dump(wf_json, fp, indent = 4)
-         
+        with open(file_path, 'wb') as fp:
+            pickle.dump(wf, fp)
+        self.filter_widget.chat_widget.add_to_chat(f"[Update] saved workflow {wf.name} to file: {file_path}")
+
+    def import_wf(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "open exported pipeline", ".")
+        if file_path:
+            try:
+                with open(file_path, 'rb') as fp:
+                    new_pipeline = pickle.load(fp)
+                    if not isinstance(new_pipeline, Pipeline):
+                        self.filter_widget.chat_widget.add_to_chat(f"[Error] did not recognize {file_path} as a valid pipeline")
+                    self.current_workflow = new_pipeline
+                    self.save_workflow()
+            except Exception as e:
+                    self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
 
     def remove_wf(self, wf_area):
         while wf_area.count():
@@ -248,7 +268,7 @@ class WorkflowWidget(QWidget):
         prompt = QInputDialog()
         text, ok = prompt.getText(None, "Set pipeline name", "new name")
         if ok:
-            self.curr_wf_name = text
+            self.current_workflow.name = text
 
     def _check_wf_exists(self, message : str):
         """Returns true if there are any actions in the current pipeline"""
@@ -265,7 +285,7 @@ class WorkflowWidget(QWidget):
 
     def reset(self):
         """resets the current workflow pipeline"""
-        self.current_workflow = {}
+        self.current_workflow = Pipeline()
         self.reset_workflow_ui()
 
     def reset_workflow_ui(self):
