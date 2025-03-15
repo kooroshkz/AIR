@@ -13,7 +13,6 @@ Key Features:
 """
 
 from typing import Callable, List, Union, Tuple
-import typing
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 import cv2
@@ -480,6 +479,21 @@ def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
 
     return masks_to_segmentation(masks)
 
+def split_channels(img : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    assert len(img.shape) == 3
+    r = img.copy()
+    r[:,:,0] = 0
+    r[:,:,1] = 0
+
+    g = img.copy()
+    g[:,:,0] = 0    
+    g[:,:,2] = 0    
+
+    b = img.copy()
+    b[:,:,1] = 0    
+    b[:,:,2] = 0    
+
+    return (r, g, b)
 
 IMG_FUNCTIONS.extend([
     apply_grayscale, apply_saturation,
@@ -487,5 +501,6 @@ IMG_FUNCTIONS.extend([
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
     apply_sharpening, apply_ridge_detection, otsu_thresholding,
-    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
+    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei,
+    split_channels
 ])

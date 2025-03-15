@@ -16,7 +16,8 @@ from .napari_image_filters import (
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
     apply_sharpening, apply_ridge_detection, otsu_thresholding,
-    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
+    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei,
+    split_channels
 )
 
 from .chat_interface import (
@@ -84,6 +85,7 @@ class ImageFilterWidget(QWidget):
 
         # Filter buttons
         filter_buttons = [
+            ("Split channels", self._split_channels),
             ("Grayscale", self._apply_grayscale),
             ("Edge Enhance", self._apply_edge_enhance),
             ("Edge Detection", self._apply_edge_detection),
@@ -243,7 +245,22 @@ class ImageFilterWidget(QWidget):
                     # Process single 2D image or RGB image directly
                     filtered_array = filter_func(original_data)
             else:
+                
+                #special case: splitting into 3 channels, so add 3 new layers
+                if filter_func is split_channels:
+                    img_r, img_b, img_g = filter_func(original_data)
+                    filter_name = filter_func.__name__.replace(
+                        "apply_", "").replace("_", " ").title()
+                    new_layer_name = f"{layer.name} | {filter_name}"
+
+                    self.viewer.add_image(img_r, name=new_layer_name + '_r')
+                    self.viewer.add_image(img_g, name=new_layer_name + '_g')
+                    self.viewer.add_image(img_b, name=new_layer_name + '_b')
+                    self.workflow.add_event_to_workflow(filter_func)
+                    return
+
                 # Apply filter directly for non-special cases
+                self.workflow.add_event_to_workflow(filter_func)
                 filtered_array = filter_func(original_data)
 
             # Rename filter function to saturation for display
@@ -256,7 +273,6 @@ class ImageFilterWidget(QWidget):
             new_layer_name = f"{layer.name} | {filter_name}"
 
             self.viewer.add_image(filtered_array, name=new_layer_name)
-
             self.workflow.add_event_to_workflow(filter_func)
 
         except Exception as e:
@@ -318,6 +334,9 @@ class ImageFilterWidget(QWidget):
 
     def _apply_cellpose_nucleus(self):
         self._apply_filter(cellpose_nuclei)
+
+    def _split_channels(self):
+        self._apply_filter(split_channels)
 
 
 def napari_experimental_provide_dock_widget():
