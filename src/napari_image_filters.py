@@ -22,8 +22,8 @@ from scipy.ndimage import gaussian_filter
 from cellpose import models
 from .cellpose_utils import masks_to_segmentation
 
-#global storage of all available functions
-IMG_FUNCTIONS : List[Callable] = []
+# global storage of all available functions
+IMG_FUNCTIONS: List[Callable] = []
 
 
 def apply_gaussian_blur(
@@ -482,10 +482,10 @@ def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
 
 
 IMG_FUNCTIONS.extend([
-apply_grayscale, apply_saturation,
-apply_edge_enhance, apply_edge_detection,
-apply_gaussian_blur, apply_contrast_enhancement,
-apply_texture_analysis, apply_adaptive_threshold,
-apply_sharpening, apply_ridge_detection, otsu_thresholding,
-otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
+    apply_grayscale, apply_saturation,
+    apply_edge_enhance, apply_edge_detection,
+    apply_gaussian_blur, apply_contrast_enhancement,
+    apply_texture_analysis, apply_adaptive_threshold,
+    apply_sharpening, apply_ridge_detection, otsu_thresholding,
+    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei
 ])

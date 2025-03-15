@@ -19,23 +19,33 @@ from qtpy.QtWidgets import (
 )
 import json
 
-#pipeline class so that the name can stay coupled to the original pipeline system without needing a rewrite
+# pipeline class so that the name can stay coupled to the original
+# pipeline system without needing a rewrite
+
+
 class Pipeline():
     def __init__(self) -> None:
-        self.workflow : Dict[int, Callable] = {}
-        self.name : str = ""
+        self.workflow: Dict[int, Callable] = {}
+        self.name: str = ""
+
     def __len__(self):
         return len(self.workflow)
+
     def __getitem__(self, key):
         return self.workflow[key]
+
     def __setitem__(self, key, value):
         self.workflow[key] = value
+
     def __delitem__(self, key):
         del self.workflow[key]
+
     def __contains__(self, key):
         return key in self.workflow
+
     def __iter__(self):
         return iter(self.workflow)
+
 
 class WorkflowWidget(QWidget):
     """
@@ -64,7 +74,7 @@ class WorkflowWidget(QWidget):
         # stored as dict for automatic index management when removing or adding
         # items to the workflow
         self.wf_idx = 0
-        self.current_workflow : Pipeline = Pipeline()
+        self.current_workflow: Pipeline = Pipeline()
         self.workflows: Dict[int, Pipeline] = {}
 
     def setup_ui(self):
@@ -200,20 +210,24 @@ class WorkflowWidget(QWidget):
 
         with open(file_path, 'wb') as fp:
             pickle.dump(wf, fp)
-        self.filter_widget.chat_widget.add_to_chat(f"[Update] saved workflow {wf.name} to file: {file_path}")
+        self.filter_widget.chat_widget.add_to_chat(
+            f"[Update] saved workflow {
+                wf.name} to file: {file_path}")
 
     def import_wf(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "open exported pipeline", ".")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "open exported pipeline", ".")
         if file_path:
             try:
                 with open(file_path, 'rb') as fp:
                     new_pipeline = pickle.load(fp)
                     if not isinstance(new_pipeline, Pipeline):
-                        self.filter_widget.chat_widget.add_to_chat(f"[Error] did not recognize {file_path} as a valid pipeline")
+                        self.filter_widget.chat_widget.add_to_chat(
+                            f"[Error] did not recognize {file_path} as a valid pipeline")
                     self.current_workflow = new_pipeline
                     self.save_workflow()
             except Exception as e:
-                    self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
+                self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
 
     def remove_wf(self, wf_area):
         while wf_area.count():
@@ -270,7 +284,7 @@ class WorkflowWidget(QWidget):
         if ok:
             self.current_workflow.name = text
 
-    def _check_wf_exists(self, message : str):
+    def _check_wf_exists(self, message: str):
         """Returns true if there are any actions in the current pipeline"""
         if len(self.current_workflow) == 0:
             self.filter_widget.chat_widget.add_to_chat(
