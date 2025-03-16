@@ -164,8 +164,8 @@ annotationTranslator/image_uploads/*
 annotationTranslator/logs/*
 annotationTranslator/database/database.db
 
-exports/
 exports
+images
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

@@ -20,14 +20,10 @@ from .napari_image_filters import (
     split_channels
 )
 
-from .chat_interface import (
-    ChatWidget
-)
-
-from .workflows import (
-    WorkflowWidget
-)
-
+from .chat_interface import ChatWidget
+from .workflows import WorkflowWidget
+from .cellposeUI import CellposeUILauncher
+from .napari_image_filters_ui import ImageFiltersUI
 
 class ImageFilterWidget(QWidget):
     """
@@ -84,7 +80,7 @@ class ImageFilterWidget(QWidget):
         layout.addLayout(sat_layout)
 
         # Filter buttons
-        filter_buttons = [
+        self.filter_buttons = [
             ("Split channels", self._split_channels),
             ("Grayscale", self._apply_grayscale),
             ("Edge Enhance", self._apply_edge_enhance),
@@ -101,10 +97,14 @@ class ImageFilterWidget(QWidget):
             ("nucleus segmentation (BETA)", self._apply_cellpose_nucleus),
         ]
 
-        for name, method in filter_buttons:
-            btn = QPushButton(name)
-            btn.clicked.connect(method)
-            layout.addWidget(btn)
+        # for name, method in self.filter_buttons:
+        #     btn = QPushButton(name)
+        #     btn.clicked.connect(method)
+        #     layout.addWidget(btn)
+
+        open_btn = QPushButton("view image filters")
+        open_btn.clicked.connect(self._view_filters)
+        layout.addWidget(open_btn)
 
         # Initialize the AI view
         self.chat_widget = ChatWidget(viewer, self)
@@ -114,7 +114,15 @@ class ImageFilterWidget(QWidget):
         self.workflow = WorkflowWidget(viewer, self)
         layout.addWidget(self.workflow)
 
+        # Initialize the cellpose interface
+        self.cellpose_ui = CellposeUILauncher(viewer, self)
+        layout.addWidget(self.cellpose_ui)
+
         self.setLayout(layout)
+
+    def _view_filters(self):
+        filters_interface = ImageFiltersUI(self.filter_buttons)
+        filters_interface.exec_()
 
     def _get_current_layer(self):
         """

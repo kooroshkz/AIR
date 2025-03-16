@@ -1,10 +1,6 @@
 from functools import partial
 import pickle
-from importlib.metadata import files
-from typing import Callable, Dict, List
-from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
-from napari._qt.widgets.qt_viewer_dock_widget import QtCustomTitleBar
-from qtpy.QtCore import QEvent, Qt
+from typing import Callable, Dict
 from qtpy.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -12,12 +8,8 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QTextEdit,
     QPushButton,
-    QLineEdit,
-    QTextEdit
 )
-import json
 
 # pipeline class so that the name can stay coupled to the original
 # pipeline system without needing a rewrite
@@ -278,7 +270,7 @@ class WorkflowWidget(QWidget):
     def remove_event_wf(self, pos: int, widget: QPushButton):
         # code should never reach this point, but for smoother error handling
         # its included
-        if len(self.current_workflow) != 0:
+        if len(self.current_workflow) == 0:
             self.filter_widget.chat_widget.add_to_chat(
                 "cannot remove event from empty pipeline")
             return
