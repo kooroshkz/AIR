@@ -1,3 +1,4 @@
+from cv2.dnn import Model
 import numpy as np
 from qtpy.QtWidgets import (
     QWidget,
@@ -59,6 +60,8 @@ class ModelInterface(QWidget):
         # get the pipeline which final model will be attached to (if a pipeline
         # is selected)
         ModelInterface.preprocessing_pipeline = self.filter_widget.workflow.get_pipelines()
+        print("-------------------------------------------------")
+        print(ModelInterface.preprocessing_pipeline)
 
         # 3 options, user just closed it, user picked to launch with no
         # pipeline, or user selected pipeline

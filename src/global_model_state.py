@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-
 class GlobalModelState:
     def __init__(self) -> None:
         # the attributes are being stored as a dictionary because I couldnt think of a better way to "Null" initialize them

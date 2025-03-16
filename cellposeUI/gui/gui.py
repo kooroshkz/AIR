@@ -19,7 +19,6 @@ import numpy as np
 from scipy.stats import mode
 import cv2
 
-from src.final_model_interface import ModelInterface
 
 from . import guiparts, menus, io
 from .. import models, core, dynamics, version, denoise, train
@@ -199,6 +198,8 @@ class MainW(QMainWindow):
 
     def call_init(self):
 
+
+        from src.final_model_interface import ModelInterface
         print(
             f"[LUIS] initialized a main window with napari interface \nintialized with attached pipeline: {
                 ModelInterface.preprocessing_pipeline}")

@@ -41,7 +41,9 @@ class Pipeline():
 
     def __iter__(self):
         return iter(self.workflow)
-
+    
+    def __repr__(self):
+        return f"{self.name}"
 
 class WorkflowWidget(QWidget):
     """
@@ -342,7 +344,6 @@ class WorkflowWidget(QWidget):
         if popup.exec_():
 
             selected_pipeline = popup.get_selected_option()
-            print(f"you selected: {selected_pipeline}")
 
             # grab the name, pipeline pair with the matching name
             return_pipeline = next(
