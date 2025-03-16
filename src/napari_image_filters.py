@@ -481,6 +481,7 @@ def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
 
 def split_channels(img : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert len(img.shape) == 3
+    print("cannot apply RGB to greyscale image")
     r = img.copy()
     r[:,:,0] = 0
     r[:,:,1] = 0

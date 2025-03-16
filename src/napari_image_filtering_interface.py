@@ -260,7 +260,6 @@ class ImageFilterWidget(QWidget):
                     return
 
                 # Apply filter directly for non-special cases
-                self.workflow.add_event_to_workflow(filter_func)
                 filtered_array = filter_func(original_data)
 
             # Rename filter function to saturation for display
