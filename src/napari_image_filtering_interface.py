@@ -25,6 +25,7 @@ from .workflows import WorkflowWidget
 from .cellposeUI import CellposeUILauncher
 from .napari_image_filters_ui import ImageFiltersUI
 
+
 class ImageFilterWidget(QWidget):
     """
     Custom Napari widget for image filtering operations.

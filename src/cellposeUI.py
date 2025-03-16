@@ -4,6 +4,7 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
+
 class CellposeUILauncher(QWidget):
     """
     Widget for launching the cellpose UI
@@ -43,11 +44,13 @@ class CellposeUILauncher(QWidget):
 
     def _launch_cellpose_ui(self):
         try:
-            self.filter_widget.chat_widget.add_to_chat("[Status] Launching cellpose UI")
+            self.filter_widget.chat_widget.add_to_chat(
+                "[Status] Launching cellpose UI")
             import subprocess
             subprocess.Popen(["python", "-m", "cellpose"])
             import cellpose
 
         except Exception as e:
-            self.filter_widget.chat_widget.add_to_chat("[Error] Could not launch cellpose UI")
+            self.filter_widget.chat_widget.add_to_chat(
+                "[Error] Could not launch cellpose UI")
             self.filter_widget.chat_widget.add_to_chat(f"[Message] {e}")
