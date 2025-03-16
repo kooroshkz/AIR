@@ -198,7 +198,6 @@ class MainW(QMainWindow):
 
     def call_init(self):
 
-
         from src.final_model_interface import ModelInterface
         print(
             f"[LUIS] initialized a main window with napari interface \nintialized with attached pipeline: {

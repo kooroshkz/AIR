@@ -41,9 +41,10 @@ class Pipeline():
 
     def __iter__(self):
         return iter(self.workflow)
-    
+
     def __repr__(self):
         return f"{self.name}"
+
 
 class WorkflowWidget(QWidget):
     """
