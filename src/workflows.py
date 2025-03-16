@@ -199,9 +199,11 @@ class WorkflowWidget(QWidget):
         self.reset()
 
     def export_wf(self, wf_index):
-        #code should never reach this point, but for smoother error recovery we need this check
+        # code should never reach this point, but for smoother error recovery
+        # we need this check
         if wf_index not in self.workflows:
-            self.filter_widget.chat_widget.add_to_chat("workflow does not exist")
+            self.filter_widget.chat_widget.add_to_chat(
+                "workflow does not exist")
             return
 
         file_path, _ = QFileDialog.getSaveFileName(self, "save to file", ".")
@@ -274,9 +276,11 @@ class WorkflowWidget(QWidget):
             self.recording_wf_layout.addWidget(lb)
 
     def remove_event_wf(self, pos: int, widget: QPushButton):
-        #code should never reach this point, but for smoother error handling its included
+        # code should never reach this point, but for smoother error handling
+        # its included
         if len(self.current_workflow) != 0:
-            self.filter_widget.chat_widget.add_to_chat("cannot remove event from empty pipeline")
+            self.filter_widget.chat_widget.add_to_chat(
+                "cannot remove event from empty pipeline")
             return
         del self.current_workflow[pos]
         self.recording_wf_layout.removeWidget(widget)
