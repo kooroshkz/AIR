@@ -245,8 +245,8 @@ class ImageFilterWidget(QWidget):
                     # Process single 2D image or RGB image directly
                     filtered_array = filter_func(original_data)
             else:
-                
-                #special case: splitting into 3 channels, so add 3 new layers
+
+                # special case: splitting into 3 channels, so add 3 new layers
                 if filter_func is split_channels:
                     img_r, img_b, img_g = filter_func(original_data)
                     filter_name = filter_func.__name__.replace(
