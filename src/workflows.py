@@ -1,6 +1,6 @@
 from functools import partial
 import pickle
-from typing import Callable, Dict
+from typing import Callable, Dict, List, Tuple
 from qtpy.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -14,10 +14,13 @@ from qtpy.QtWidgets import (
 # pipeline class so that the name can stay coupled to the original
 # pipeline system without needing a rewrite
 
+from .global_model_state import GlobalModelState
+from .utils import DropdownPopup
 
 class Pipeline():
     def __init__(self) -> None:
         self.workflow: Dict[int, Callable] = {}
+        self.final_stage : GlobalModelState | None = None
         self.name: str = ""
 
     def __len__(self):
@@ -194,7 +197,7 @@ class WorkflowWidget(QWidget):
         # code should never reach this point, but for smoother error recovery
         # we need this check
         if wf_index not in self.workflows:
-            self.filter_widget.chat_widget.add_to_chat(
+            self.filter_widget.add_to_chat(
                 "workflow does not exist")
             return
 
@@ -206,7 +209,7 @@ class WorkflowWidget(QWidget):
 
         with open(file_path, 'wb') as fp:
             pickle.dump(wf, fp)
-        self.filter_widget.chat_widget.add_to_chat(
+        self.filter_widget.add_to_chat(
             f"[Update] saved workflow {
                 wf.name} to file: {file_path}")
 
@@ -218,12 +221,12 @@ class WorkflowWidget(QWidget):
                 with open(file_path, 'rb') as fp:
                     new_pipeline = pickle.load(fp)
                     if not isinstance(new_pipeline, Pipeline):
-                        self.filter_widget.chat_widget.add_to_chat(
+                        self.filter_widget.add_to_chat(
                             f"[Error] did not recognize {file_path} as a valid pipeline")
                     self.current_workflow = new_pipeline
                     self.save_workflow()
             except Exception as e:
-                self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
+                self.filter_widget.add_to_chat(f"[Error] {e}")
 
     def remove_wf(self, wf_area):
         while wf_area.count():
@@ -271,7 +274,7 @@ class WorkflowWidget(QWidget):
         # code should never reach this point, but for smoother error handling
         # its included
         if len(self.current_workflow) == 0:
-            self.filter_widget.chat_widget.add_to_chat(
+            self.filter_widget.add_to_chat(
                 "cannot remove event from empty pipeline")
             return
         del self.current_workflow[pos]
@@ -288,7 +291,7 @@ class WorkflowWidget(QWidget):
     def _check_wf_exists(self, message: str):
         """Returns true if there are any actions in the current pipeline"""
         if len(self.current_workflow) == 0:
-            self.filter_widget.chat_widget.add_to_chat(
+            self.filter_widget.add_to_chat(
                 f"[Error] {message}")
             return False
         return True
@@ -322,6 +325,33 @@ class WorkflowWidget(QWidget):
         self.recording_wf_layout.update()
         self.recording_wf_layout.parentWidget().adjustSize()
         self.repaint()  # Ensure the UI redraws fully
+
+    def get_pipelines(self) -> Pipeline | None:
+        #prompts the user to select a pipeline, if theres one to choose
+
+        options : List[Tuple[str, Pipeline]]= []
+
+        for _, pipeline in self.workflows.items():
+            options.append((pipeline.name, pipeline))
+
+        options.append(("no pipeline", Pipeline()))
+        
+        popup = DropdownPopup([x[0] for x in options])
+
+        if popup.exec_():
+
+            selected_pipeline = popup.get_selected_option()
+            print(f"you selected: {selected_pipeline}")
+
+            #grab the name, pipeline pair with the matching name
+            return_pipeline = next((t for t in options if t[0] == selected_pipeline), None)
+
+            if return_pipeline is None:
+                return None
+
+            return return_pipeline[1]
+
+        return None
 
     def __len__(self):
         return len(self.current_workflow)

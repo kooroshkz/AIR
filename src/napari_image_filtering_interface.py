@@ -22,7 +22,7 @@ from .napari_image_filters import (
 
 from .chat_interface import ChatWidget
 from .workflows import WorkflowWidget
-from .cellposeUI import CellposeUILauncher
+from .final_model_interface import ModelInterface
 from .napari_image_filters_ui import ImageFiltersUI
 
 
@@ -115,9 +115,9 @@ class ImageFilterWidget(QWidget):
         self.workflow = WorkflowWidget(viewer, self)
         layout.addWidget(self.workflow)
 
-        # Initialize the cellpose interface
-        self.cellpose_ui = CellposeUILauncher(viewer, self)
-        layout.addWidget(self.cellpose_ui)
+        # Initialize the cellpose interface, which is used to fine tune the model which is the final stage in their custom pipeline
+        self.model_interf = ModelInterface(viewer, self)
+        layout.addWidget(self.model_interf)
 
         self.setLayout(layout)
 
@@ -287,6 +287,9 @@ class ImageFilterWidget(QWidget):
             print(f"Error applying filter: {e}")
             import traceback
             traceback.print_exc()
+
+    def add_to_chat(self, log : str):
+        self.chat_widget.add_to_chat(log)
 
     def _apply_saturation(self):
         """Apply saturation adjustment to current layer."""

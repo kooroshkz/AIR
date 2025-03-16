@@ -1,4 +1,3 @@
-
 from os import remove
 from pydantic import BaseModel
 from typing import List, Union
