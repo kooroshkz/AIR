@@ -32,7 +32,8 @@ def _loss_fn_seg(lbl, y, device):
     veci = 5. * torch.from_numpy(lbl[:, 1:]).to(device)
     loss = criterion(y[:, :2], veci)
     loss /= 2.
-    loss2 = criterion2(y[:, -1], torch.from_numpy(lbl[:, 0] > 0.5).to(device).float())
+    loss2 = criterion2(
+        y[:, -1], torch.from_numpy(lbl[:, 0] > 0.5).to(device).float())
     loss = loss + loss2
     return loss
 
@@ -59,8 +60,12 @@ def _get_batch(inds, data=None, labels=None, files=None, labels_files=None,
     if data is None:
         lbls = None
         imgs = [io.imread(files[i]) for i in inds]
-        imgs = _reshape_norm(imgs, channels=channels, channel_axis=channel_axis,
-                             rgb=rgb, normalize_params=normalize_params)
+        imgs = _reshape_norm(
+            imgs,
+            channels=channels,
+            channel_axis=channel_axis,
+            rgb=rgb,
+            normalize_params=normalize_params)
         if labels_files is not None:
             lbls = [io.imread(labels_files[i])[1:] for i in inds]
     else:
@@ -81,7 +86,9 @@ def pad_to_rgb(img):
             img = img[::-1]
         # randomly insert blank channel
         ic = np.random.randint(3)
-        img = np.insert(img, ic, np.zeros((3 - nc, Ly, Lx), dtype=img.dtype), axis=0)
+        img = np.insert(
+            img, ic, np.zeros(
+                (3 - nc, Ly, Lx), dtype=img.dtype), axis=0)
     return img
 
 
@@ -137,7 +144,8 @@ def _reshape_norm_save(files, channels=None, channel_axis=None,
                                           channel_axis=channel_axis)
             td = td.transpose(2, 0, 1)
         if normalize_params["normalize"]:
-            td = transforms.normalize_img(td, normalize=normalize_params, axis=0)
+            td = transforms.normalize_img(
+                td, normalize=normalize_params, axis=0)
         fnew = os.path.splitext(str(f))[0] + "_cpnorm.tif"
         io.imsave(fnew, td)
         files_new.append(fnew)
@@ -147,16 +155,29 @@ def _reshape_norm_save(files, channels=None, channel_axis=None,
     #                     channel_axis=channel_axis, normalize_params=normalize_params)
     # elif test_files is not None:
     #     test_files = reshape_norm_save(test_files, channels=channels,
-    #                     channel_axis=channel_axis, normalize_params=normalize_params)
+    # channel_axis=channel_axis, normalize_params=normalize_params)
 
 
-def _process_train_test(train_data=None, train_labels=None, train_files=None,
-                        train_labels_files=None, train_probs=None, test_data=None,
-                        test_labels=None, test_files=None, test_labels_files=None,
-                        test_probs=None, load_files=True, min_train_masks=5,
-                        compute_flows=False, channels=None, channel_axis=None,
-                        rgb=False, normalize_params={"normalize": False
-                                                    }, device=None):
+def _process_train_test(
+        train_data=None,
+        train_labels=None,
+        train_files=None,
+        train_labels_files=None,
+        train_probs=None,
+        test_data=None,
+        test_labels=None,
+        test_files=None,
+        test_labels_files=None,
+        test_probs=None,
+        load_files=True,
+        min_train_masks=5,
+        compute_flows=False,
+        channels=None,
+        channel_axis=None,
+        rgb=False,
+        normalize_params={
+            "normalize": False},
+        device=None):
     """
     Process train and test data.
 
@@ -183,9 +204,10 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
     Returns:
         tuple: A tuple containing the processed train and test data and sampling probabilities and diameters.
     """
-    if device == None:
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps') if torch.backends.mps.is_available() else None
-    
+    if device is None:
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device(
+            'mps') if torch.backends.mps.is_available() else None
+
     if train_data is not None and train_labels is not None:
         # if data is loaded
         nimg = len(train_data)
@@ -195,35 +217,41 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
         nimg = len(train_files)
         if train_labels_files is None:
             train_labels_files = [
-                os.path.splitext(str(tf))[0] + "_flows.tif" for tf in train_files
-            ]
-            train_labels_files = [tf for tf in train_labels_files if os.path.exists(tf)]
+                os.path.splitext(
+                    str(tf))[0] +
+                "_flows.tif" for tf in train_files]
+            train_labels_files = [
+                tf for tf in train_labels_files if os.path.exists(tf)]
         if (test_data is not None or
                 test_files is not None) and test_labels_files is None:
             test_labels_files = [
-                os.path.splitext(str(tf))[0] + "_flows.tif" for tf in test_files
-            ]
-            test_labels_files = [tf for tf in test_labels_files if os.path.exists(tf)]
+                os.path.splitext(
+                    str(tf))[0] +
+                "_flows.tif" for tf in test_files]
+            test_labels_files = [
+                tf for tf in test_labels_files if os.path.exists(tf)]
         if not load_files:
             train_logger.info(">>> using files instead of loading dataset")
         else:
             # load all images
             train_logger.info(">>> loading images and labels")
             train_data = [io.imread(train_files[i]) for i in trange(nimg)]
-            train_labels = [io.imread(train_labels_files[i]) for i in trange(nimg)]
+            train_labels = [io.imread(train_labels_files[i])
+                            for i in trange(nimg)]
         nimg_test = len(test_files) if test_files is not None else None
         if load_files and nimg_test:
             test_data = [io.imread(test_files[i]) for i in trange(nimg_test)]
-            test_labels = [io.imread(test_labels_files[i]) for i in trange(nimg_test)]
+            test_labels = [io.imread(test_labels_files[i])
+                           for i in trange(nimg_test)]
 
-    ### check that arrays are correct size
-    if ((train_labels is not None and nimg != len(train_labels)) or
-        (train_labels_files is not None and nimg != len(train_labels_files))):
+    # check that arrays are correct size
+    if ((train_labels is not None and nimg != len(train_labels)) or (
+            train_labels_files is not None and nimg != len(train_labels_files))):
         error_message = "train data and labels not same length"
         train_logger.critical(error_message)
         raise ValueError(error_message)
-    if ((test_labels is not None and nimg_test != len(test_labels)) or
-        (test_labels_files is not None and nimg_test != len(test_labels_files))):
+    if ((test_labels is not None and nimg_test != len(test_labels)) or (
+            test_labels_files is not None and nimg_test != len(test_labels_files))):
         train_logger.warning("test data and labels not same length, not using")
         test_data, test_files = None, None
     if train_labels is not None:
@@ -236,13 +264,13 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
             train_logger.critical(error_message)
             raise ValueError(error_message)
 
-    ### check that flows are computed
+    # check that flows are computed
     if train_labels is not None:
-        train_labels = dynamics.labels_to_flows(train_labels, files=train_files,
-                                                device=device)
+        train_labels = dynamics.labels_to_flows(
+            train_labels, files=train_files, device=device)
         if test_labels is not None:
-            test_labels = dynamics.labels_to_flows(test_labels, files=test_files,
-                                                   device=device)
+            test_labels = dynamics.labels_to_flows(
+                test_labels, files=test_files, device=device)
     elif compute_flows:
         for k in trange(nimg):
             tl = dynamics.labels_to_flows(io.imread(train_labels_files),
@@ -252,19 +280,20 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
                 tl = dynamics.labels_to_flows(io.imread(test_labels_files),
                                               files=test_files, device=device)
 
-    ### compute diameters
+    # compute diameters
     nmasks = np.zeros(nimg)
     diam_train = np.zeros(nimg)
     train_logger.info(">>> computing diameters")
     for k in trange(nimg):
-        tl = (train_labels[k][0]
-              if train_labels is not None else io.imread(train_labels_files[k])[0])
+        tl = (
+            train_labels[k][0] if train_labels is not None else io.imread(
+                train_labels_files[k])[0])
         diam_train[k], dall = utils.diameters(tl)
         nmasks[k] = len(dall)
     diam_train[diam_train < 5] = 5.
     if test_data is not None:
-        diam_test = np.array(
-            [utils.diameters(test_labels[k][0])[0] for k in trange(len(test_labels))])
+        diam_test = np.array([utils.diameters(test_labels[k][0])[
+            0] for k in trange(len(test_labels))])
         diam_test[diam_test < 5] = 5.
     elif test_labels_files is not None:
         diam_test = np.array([
@@ -275,13 +304,12 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
     else:
         diam_test = None
 
-    ### check to remove training images with too few masks
+    # check to remove training images with too few masks
     if min_train_masks > 0:
         nremove = (nmasks < min_train_masks).sum()
         if nremove > 0:
             train_logger.warning(
-                f"{nremove} train images with number of masks less than min_train_masks ({min_train_masks}), removing from train set"
-            )
+                f"{nremove} train images with number of masks less than min_train_masks ({min_train_masks}), removing from train set")
             ikeep = np.nonzero(nmasks >= min_train_masks)[0]
             if train_data is not None:
                 train_data = [train_data[i] for i in ikeep]
@@ -295,16 +323,16 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
             diam_train = diam_train[ikeep]
             nimg = len(train_data)
 
-    ### normalize probabilities
-    train_probs = 1. / nimg * np.ones(nimg,
-                                      "float64") if train_probs is None else train_probs
+    # normalize probabilities
+    train_probs = 1. / nimg * \
+        np.ones(nimg, "float64") if train_probs is None else train_probs
     train_probs /= train_probs.sum()
     if test_files is not None or test_data is not None:
         test_probs = 1. / nimg_test * np.ones(
             nimg_test, "float64") if test_probs is None else test_probs
         test_probs /= test_probs.sum()
 
-    ### reshape and normalize train / test data
+    # reshape and normalize train / test data
     normed = False
     if channels is not None or normalize_params["normalize"]:
         if channels:
@@ -321,20 +349,56 @@ def _process_train_test(train_data=None, train_labels=None, train_files=None,
                                       channel_axis=channel_axis, rgb=rgb,
                                       normalize_params=normalize_params)
 
-    return (train_data, train_labels, train_files, train_labels_files, train_probs,
-            diam_train, test_data, test_labels, test_files, test_labels_files,
-            test_probs, diam_test, normed)
+    return (
+        train_data,
+        train_labels,
+        train_files,
+        train_labels_files,
+        train_probs,
+        diam_train,
+        test_data,
+        test_labels,
+        test_files,
+        test_labels_files,
+        test_probs,
+        diam_test,
+        normed)
 
 
-def train_seg(net, train_data=None, train_labels=None, train_files=None,
-              train_labels_files=None, train_probs=None, test_data=None,
-              test_labels=None, test_files=None, test_labels_files=None,
-              test_probs=None, load_files=True, batch_size=8, learning_rate=0.005,
-              n_epochs=2000, weight_decay=1e-5, momentum=0.9, SGD=False, channels=None,
-              channel_axis=None, rgb=False, normalize=True, compute_flows=False,
-              save_path=None, save_every=100, save_each=False, nimg_per_epoch=None,
-              nimg_test_per_epoch=None, rescale=True, scale_range=None, bsize=224,
-              min_train_masks=5, model_name=None):
+def train_seg(
+        net,
+        train_data=None,
+        train_labels=None,
+        train_files=None,
+        train_labels_files=None,
+        train_probs=None,
+        test_data=None,
+        test_labels=None,
+        test_files=None,
+        test_labels_files=None,
+        test_probs=None,
+        load_files=True,
+        batch_size=8,
+        learning_rate=0.005,
+        n_epochs=2000,
+        weight_decay=1e-5,
+        momentum=0.9,
+        SGD=False,
+        channels=None,
+        channel_axis=None,
+        rgb=False,
+        normalize=True,
+        compute_flows=False,
+        save_path=None,
+        save_every=100,
+        save_each=False,
+        nimg_per_epoch=None,
+        nimg_test_per_epoch=None,
+        rescale=True,
+        scale_range=None,
+        bsize=224,
+        min_train_masks=5,
+        model_name=None):
     """
     Train the network with images for segmentation.
 
@@ -372,7 +436,7 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
 
     Returns:
         tuple: A tuple containing the path to the saved model weights, training losses, and test losses.
-       
+
     """
     device = net.device
 
@@ -387,18 +451,37 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
         normalize_params = models.normalize_default
         normalize_params["normalize"] = normalize
 
-    out = _process_train_test(train_data=train_data, train_labels=train_labels,
-                              train_files=train_files, train_labels_files=train_labels_files,
-                              train_probs=train_probs,
-                              test_data=test_data, test_labels=test_labels,
-                              test_files=test_files, test_labels_files=test_labels_files,
-                              test_probs=test_probs,
-                              load_files=load_files, min_train_masks=min_train_masks,
-                              compute_flows=compute_flows, channels=channels,
-                              channel_axis=channel_axis, rgb=rgb,
-                              normalize_params=normalize_params, device=net.device)
-    (train_data, train_labels, train_files, train_labels_files, train_probs, diam_train,
-     test_data, test_labels, test_files, test_labels_files, test_probs, diam_test,
+    out = _process_train_test(
+        train_data=train_data,
+        train_labels=train_labels,
+        train_files=train_files,
+        train_labels_files=train_labels_files,
+        train_probs=train_probs,
+        test_data=test_data,
+        test_labels=test_labels,
+        test_files=test_files,
+        test_labels_files=test_labels_files,
+        test_probs=test_probs,
+        load_files=load_files,
+        min_train_masks=min_train_masks,
+        compute_flows=compute_flows,
+        channels=channels,
+        channel_axis=channel_axis,
+        rgb=rgb,
+        normalize_params=normalize_params,
+        device=net.device)
+    (train_data,
+     train_labels,
+     train_files,
+     train_labels_files,
+     train_probs,
+     diam_train,
+     test_data,
+     test_labels,
+     test_files,
+     test_labels_files,
+     test_probs,
+     diam_test,
      normed) = out
     # already normalized, do not normalize during training
     if normed:
@@ -410,7 +493,7 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
             "channel_axis": channel_axis,
             "rgb": rgb
         }
-    
+
     net.diam_labels.data = torch.Tensor([diam_train.mean()]).to(device)
 
     nimg = len(train_data) if train_data is not None else len(train_files)
@@ -431,20 +514,27 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
         for i in range(10):
             LR = np.append(LR, LR[-1] / 2 * np.ones(5))
 
-    train_logger.info(f">>> n_epochs={n_epochs}, n_train={nimg}, n_test={nimg_test}")
+    train_logger.info(
+        f">>> n_epochs={n_epochs}, n_train={nimg}, n_test={nimg_test}")
 
     if not SGD:
         train_logger.info(
-            f">>> AdamW, learning_rate={learning_rate:0.5f}, weight_decay={weight_decay:0.5f}"
-        )
+            f">>> AdamW, learning_rate={
+                learning_rate:0.5f}, weight_decay={
+                weight_decay:0.5f}")
         optimizer = torch.optim.AdamW(net.parameters(), lr=learning_rate,
                                       weight_decay=weight_decay)
     else:
         train_logger.info(
-            f">>> SGD, learning_rate={learning_rate:0.5f}, weight_decay={weight_decay:0.5f}, momentum={momentum:0.3f}"
-        )
-        optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate,
-                                    weight_decay=weight_decay, momentum=momentum)
+            f">>> SGD, learning_rate={
+                learning_rate:0.5f}, weight_decay={
+                weight_decay:0.5f}, momentum={
+                momentum:0.3f}")
+        optimizer = torch.optim.SGD(
+            net.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
+            momentum=momentum)
 
     t0 = time.time()
     model_name = f"cellpose_{t0}" if model_name is None else model_name
@@ -460,13 +550,15 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
         np.random.seed(iepoch)
         if nimg != nimg_per_epoch:
             # choose random images for epoch with probability train_probs
-            rperm = np.random.choice(np.arange(0, nimg), size=(nimg_per_epoch,),
-                                     p=train_probs)
+            rperm = np.random.choice(
+                np.arange(
+                    0, nimg), size=(
+                    nimg_per_epoch,), p=train_probs)
         else:
             # otherwise use all images
             rperm = np.random.permutation(np.arange(0, nimg))
         for param_group in optimizer.param_groups:
-            param_group["lr"] = LR[iepoch] # set learning rate
+            param_group["lr"] = LR[iepoch]  # set learning rate
         net.train()
         for k in range(0, nimg_per_epoch, batch_size):
             kend = min(k + batch_size, nimg_per_epoch)
@@ -503,8 +595,10 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
             if test_data is not None or test_files is not None:
                 np.random.seed(42)
                 if nimg_test != nimg_test_per_epoch:
-                    rperm = np.random.choice(np.arange(0, nimg_test),
-                                             size=(nimg_test_per_epoch,), p=test_probs)
+                    rperm = np.random.choice(
+                        np.arange(
+                            0, nimg_test), size=(
+                            nimg_test_per_epoch,), p=test_probs)
                 else:
                     rperm = np.random.permutation(np.arange(0, nimg_test))
                 for ibatch in range(0, len(rperm), batch_size):
@@ -531,31 +625,54 @@ def train_seg(net, train_data=None, train_labels=None, train_files=None,
                 test_losses[iepoch] = lavgt
             lavg /= nsum
             train_logger.info(
-                f"{iepoch}, train_loss={lavg:.4f}, test_loss={lavgt:.4f}, LR={LR[iepoch]:.6f}, time {time.time()-t0:.2f}s"
-            )
+                f"{iepoch}, train_loss={
+                    lavg:.4f}, test_loss={
+                    lavgt:.4f}, LR={
+                    LR[iepoch]:.6f}, time {
+                    time.time() -
+                    t0:.2f}s")
             lavg, nsum = 0, 0
 
-        if iepoch == n_epochs - 1 or (iepoch % save_every == 0 and iepoch != 0):
-            if save_each and iepoch != n_epochs - 1:  #separate files as model progresses
+        if iepoch == n_epochs - 1 or (iepoch %
+                                      save_every == 0 and iepoch != 0):
+            if save_each and iepoch != n_epochs - 1:  # separate files as model progresses
                 filename0 = str(filename) + f"_epoch_{iepoch:04d}"
             else:
                 filename0 = filename
             train_logger.info(f"saving network parameters to {filename0}")
             net.save_model(filename0)
-    
+
     net.save_model(filename)
 
     return filename, train_losses, test_losses
 
 
-def train_size(net, pretrained_model, train_data=None, train_labels=None,
-               train_files=None, train_labels_files=None, train_probs=None,
-               test_data=None, test_labels=None, test_files=None,
-               test_labels_files=None, test_probs=None, load_files=True,
-               min_train_masks=5, channels=None, channel_axis=None, rgb=False,
-               normalize=True, nimg_per_epoch=None, nimg_test_per_epoch=None,
-               batch_size=64, scale_range=1.0, bsize=512, l2_regularization=1.0,
-               n_epochs=10):
+def train_size(
+        net,
+        pretrained_model,
+        train_data=None,
+        train_labels=None,
+        train_files=None,
+        train_labels_files=None,
+        train_probs=None,
+        test_data=None,
+        test_labels=None,
+        test_files=None,
+        test_labels_files=None,
+        test_probs=None,
+        load_files=True,
+        min_train_masks=5,
+        channels=None,
+        channel_axis=None,
+        rgb=False,
+        normalize=True,
+        nimg_per_epoch=None,
+        nimg_test_per_epoch=None,
+        batch_size=64,
+        scale_range=1.0,
+        bsize=512,
+        l2_regularization=1.0,
+        n_epochs=10):
     """Train the size model.
 
     Args:
@@ -594,15 +711,35 @@ def train_size(net, pretrained_model, train_data=None, train_labels=None,
         normalize_params["normalize"] = normalize
 
     out = _process_train_test(
-        train_data=train_data, train_labels=train_labels, train_files=train_files,
-        train_labels_files=train_labels_files, train_probs=train_probs,
-        test_data=test_data, test_labels=test_labels, test_files=test_files,
-        test_labels_files=test_labels_files, test_probs=test_probs,
-        load_files=load_files, min_train_masks=min_train_masks, compute_flows=False,
-        channels=channels, channel_axis=channel_axis, normalize_params=normalize_params,
+        train_data=train_data,
+        train_labels=train_labels,
+        train_files=train_files,
+        train_labels_files=train_labels_files,
+        train_probs=train_probs,
+        test_data=test_data,
+        test_labels=test_labels,
+        test_files=test_files,
+        test_labels_files=test_labels_files,
+        test_probs=test_probs,
+        load_files=load_files,
+        min_train_masks=min_train_masks,
+        compute_flows=False,
+        channels=channels,
+        channel_axis=channel_axis,
+        normalize_params=normalize_params,
         device=net.device)
-    (train_data, train_labels, train_files, train_labels_files, train_probs, diam_train,
-     test_data, test_labels, test_files, test_labels_files, test_probs, diam_test,
+    (train_data,
+     train_labels,
+     train_files,
+     train_labels_files,
+     train_probs,
+     diam_train,
+     test_data,
+     test_labels,
+     test_files,
+     test_labels_files,
+     test_probs,
+     diam_test,
      normed) = out
 
     # already normalized, do not normalize during training
@@ -632,12 +769,16 @@ def train_size(net, pretrained_model, train_data=None, train_labels=None,
     for iepoch in range(n_epochs):
         np.random.seed(iepoch)
         if nimg != nimg_per_epoch:
-            rperm = np.random.choice(np.arange(0, nimg), size=(nimg_per_epoch,),
-                                     p=train_probs)
+            rperm = np.random.choice(
+                np.arange(
+                    0, nimg), size=(
+                    nimg_per_epoch,), p=train_probs)
         else:
             rperm = np.random.permutation(np.arange(0, nimg))
         for ibatch in range(0, nimg_per_epoch, batch_size):
-            inds_batch = np.arange(ibatch, min(nimg_per_epoch, ibatch + batch_size))
+            inds_batch = np.arange(
+                ibatch, min(
+                    nimg_per_epoch, ibatch + batch_size))
             inds = rperm[inds_batch]
             imgs, lbls = _get_batch(inds, data=train_data, labels=train_labels,
                                     files=train_files, **kwargs)
@@ -662,7 +803,12 @@ def train_size(net, pretrained_model, train_data=None, train_labels=None,
     ymean = diams.copy().mean()
     y = diams.copy() - ymean
 
-    A = np.linalg.solve(X @ X.T + l2_regularization * np.eye(X.shape[0]), X @ y)
+    A = np.linalg.solve(
+        X @ X.T +
+        l2_regularization *
+        np.eye(
+            X.shape[0]),
+        X @ y)
     ypred = A @ X
 
     train_logger.info("train correlation: %0.4f" % np.corrcoef(y, ypred)[0, 1])
@@ -693,10 +839,12 @@ def train_size(net, pretrained_model, train_data=None, train_labels=None,
             with torch.no_grad():
                 feat = net(imgi)[1]
             styles_test[inds_batch] = feat.cpu().numpy()
-            diams_test[inds_batch] = np.log(diami) - np.log(diam_mean) + np.log(scale)
+            diams_test[inds_batch] = np.log(
+                diami) - np.log(diam_mean) + np.log(scale)
             diams_test0[inds_batch] = diamt
 
-        diam_test_pred = np.exp(A @ (styles_test - smean).T + np.log(diam_mean) + ymean)
+        diam_test_pred = np.exp(
+            A @ (styles_test - smean).T + np.log(diam_mean) + ymean)
         diam_test_pred = np.maximum(5., diam_test_pred)
         train_logger.info("test correlation: %0.4f" %
                           np.corrcoef(diams_test0, diam_test_pred)[0, 1])

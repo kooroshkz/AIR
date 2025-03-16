@@ -1,5 +1,11 @@
 # stdlib imports
-import os, getpass, datetime, pathlib, tempfile, functools, glob
+import os
+import getpass
+import datetime
+import pathlib
+import tempfile
+import functools
+import glob
 
 # non-stdlib core dependencies
 import numpy as np
@@ -16,8 +22,6 @@ import dask_image.ndmeasure
 import yaml
 import zarr
 import dask_jobqueue
-
-
 
 
 ######################## File format functions ################################
@@ -82,7 +86,7 @@ def wrap_folder_of_tiffs(
     filename_pattern : string
         A glob pattern that will match all needed tif files
 
-    block_index_pattern : regular expression string (default: r'_(Z)(\d+)(Y)(\d+)(X)(\d+)')
+    block_index_pattern : regular expression string (default: r'_(Z)(\\d+)(Y)(\\d+)(X)(\\d+)')
         A regular expression pattern that indicates how to parse tiff filenames
         to determine where each tiff file lies in the overall block grid
         The default pattern assumes filenames like the following:
@@ -106,17 +110,15 @@ def wrap_folder_of_tiffs(
         aszarr=True,
         imread=imread,
         pattern=block_index_pattern,
-        axestiled={x:x for x in range(3)},
+        axestiled={x: x for x in range(3)},
     )
     return zarr.open(store=store)
 
 
-
-
 ######################## Cluster related functions ############################
-
-#----------------------- config stuff ----------------------------------------#
+# ----------------------- config stuff ----------------------------------------#
 DEFAULT_CONFIG_FILENAME = 'distributed_cellpose_dask_config.yaml'
+
 
 def _config_path(config_name):
     """Add config directory path to config filename"""
@@ -142,10 +144,11 @@ def _remove_config_file(
 ):
     """Removes a config file from disk"""
     config_path = _config_path(config_name)
-    if os.path.exists(config_path): os.remove(config_path)
+    if os.path.exists(config_path):
+        os.remove(config_path)
 
 
-#----------------------- clusters --------------------------------------------#
+# ----------------------- clusters --------------------------------------------#
 class myLocalCluster(distributed.LocalCluster):
     """
     This is a thin wrapper extending dask.distributed.LocalCluster to set
@@ -183,23 +186,25 @@ class myLocalCluster(distributed.LocalCluster):
         self.persist_config = persist_config
         scratch_dir = f"{os.getcwd()}/"
         scratch_dir += f".{getpass.getuser()}_distributed_cellpose/"
-        config_defaults = {'temporary-directory':scratch_dir}
+        config_defaults = {'temporary-directory': scratch_dir}
         config = {**config_defaults, **config}
         _modify_dask_config(config, config_name)
 
         # construct
-        if "host" not in kwargs: kwargs["host"] = ""
+        if "host" not in kwargs:
+            kwargs["host"] = ""
         super().__init__(**kwargs)
         self.client = distributed.Client(self)
 
         # set environment variables for workers (threading)
         environment_vars = {
-            'MKL_NUM_THREADS':str(2*ncpus),
-            'NUM_MKL_THREADS':str(2*ncpus),
-            'OPENBLAS_NUM_THREADS':str(2*ncpus),
-            'OPENMP_NUM_THREADS':str(2*ncpus),
-            'OMP_NUM_THREADS':str(2*ncpus),
+            'MKL_NUM_THREADS': str(2 * ncpus),
+            'NUM_MKL_THREADS': str(2 * ncpus),
+            'OPENBLAS_NUM_THREADS': str(2 * ncpus),
+            'OPENMP_NUM_THREADS': str(2 * ncpus),
+            'OMP_NUM_THREADS': str(2 * ncpus),
         }
+
         def set_environment_vars():
             for k, v in environment_vars.items():
                 os.environ[k] = v
@@ -208,6 +213,7 @@ class myLocalCluster(distributed.LocalCluster):
         print("Cluster dashboard link: ", self.dashboard_link)
 
     def __enter__(self): return self
+
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist_config:
             _remove_config_file(self.config_name)
@@ -252,20 +258,20 @@ class janeliaLSFCluster(dask_jobqueue.LSFCluster):
         self.persist_config = persist_config
         scratch_dir = f"/scratch/{getpass.getuser()}/"
         config_defaults = {
-            'temporary-directory':scratch_dir,
-            'distributed.comm.timeouts.connect':'180s',
-            'distributed.comm.timeouts.tcp':'360s',
+            'temporary-directory': scratch_dir,
+            'distributed.comm.timeouts.connect': '180s',
+            'distributed.comm.timeouts.tcp': '360s',
         }
         config = {**config_defaults, **config}
         _modify_dask_config(config, config_name)
 
         # threading is best in low level libraries
         job_script_prologue = [
-            f"export MKL_NUM_THREADS={2*ncpus}",
-            f"export NUM_MKL_THREADS={2*ncpus}",
-            f"export OPENBLAS_NUM_THREADS={2*ncpus}",
-            f"export OPENMP_NUM_THREADS={2*ncpus}",
-            f"export OMP_NUM_THREADS={2*ncpus}",
+            f"export MKL_NUM_THREADS={2 * ncpus}",
+            f"export NUM_MKL_THREADS={2 * ncpus}",
+            f"export OPENBLAS_NUM_THREADS={2 * ncpus}",
+            f"export OPENMP_NUM_THREADS={2 * ncpus}",
+            f"export OMP_NUM_THREADS={2 * ncpus}",
         ]
 
         # set scratch and log directories
@@ -285,8 +291,8 @@ class janeliaLSFCluster(dask_jobqueue.LSFCluster):
             ncpus=ncpus,
             processes=1,
             cores=1,
-            memory=str(15*ncpus)+'GB',
-            mem=int(15e9*ncpus),
+            memory=str(15 * ncpus) + 'GB',
+            mem=int(15e9 * ncpus),
             job_script_prologue=job_script_prologue,
             job_cls=quietLSFJob,
             **kwargs,
@@ -297,14 +303,13 @@ class janeliaLSFCluster(dask_jobqueue.LSFCluster):
         # set adaptive cluster bounds
         self.adapt_cluster(min_workers, max_workers)
 
-
     def __enter__(self): return self
+
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist_config:
             _remove_config_file(self.config_name)
         self.client.close()
         super().__exit__(exc_type, exc_value, traceback)
-
 
     def adapt_cluster(self, min_workers, max_workers):
         _ = self.adapt(
@@ -313,7 +318,6 @@ class janeliaLSFCluster(dask_jobqueue.LSFCluster):
             interval='10s',
             wait_count=6,
         )
-
 
     def change_worker_attributes(
         self,
@@ -330,7 +334,7 @@ class janeliaLSFCluster(dask_jobqueue.LSFCluster):
         self.adapt_cluster(min_workers, max_workers)
 
 
-#----------------------- decorator -------------------------------------------#
+# ----------------------- decorator -------------------------------------------#
 def cluster(func):
     """
     This decorator ensures a function will run inside a cluster
@@ -346,10 +350,10 @@ def cluster(func):
         # TODO: this only checks if args are explicitly present in function call
         #       it does not check if they are set correctly in any way
         assert 'cluster' in kwargs or 'cluster_kwargs' in kwargs, \
-        "Either cluster or cluster_kwargs must be defined"
-        if not 'cluster' in kwargs:
+            "Either cluster or cluster_kwargs must be defined"
+        if 'cluster' not in kwargs:
             cluster_constructor = myLocalCluster
-            F = lambda x: x in kwargs['cluster_kwargs']
+            def F(x): return x in kwargs['cluster_kwargs']
             if F('ncpus') and F('min_workers') and F('max_workers'):
                 cluster_constructor = janeliaLSFCluster
             with cluster_constructor(**kwargs['cluster_kwargs']) as cluster:
@@ -359,11 +363,9 @@ def cluster(func):
     return create_or_pass_cluster
 
 
-
-
 ######################## the function to run on each block ####################
 
-#----------------------- The main function -----------------------------------#
+# ----------------------- The main function -----------------------------------#
 def process_block(
     block_index,
     crop,
@@ -493,16 +495,19 @@ def process_block(
     )
     boxes = bounding_boxes_in_global_coordinates(segmentation, crop)
     nblocks = get_nblocks(input_zarr.shape, blocksize)
-    segmentation, remap = global_segment_ids(segmentation, block_index, nblocks)
-    if remap[0] == 0: remap = remap[1:]
+    segmentation, remap = global_segment_ids(
+        segmentation, block_index, nblocks)
+    if remap[0] == 0:
+        remap = remap[1:]
 
-    if test_mode: return segmentation, boxes, remap
+    if test_mode:
+        return segmentation, boxes, remap
     output_zarr[tuple(crop)] = segmentation
     faces = block_faces(segmentation)
     return faces, boxes, remap
 
 
-#----------------------- component functions ---------------------------------#
+# ----------------------- component functions ---------------------------------#
 def read_preprocess_and_segment(
     input_zarr,
     crop,
@@ -516,7 +521,7 @@ def read_preprocess_and_segment(
     for pp_step in preprocessing_steps:
         pp_step[1]['crop'] = crop
         image = pp_step[0](image, **pp_step[1])
-    log_file=None
+    log_file = None
     if worker_logs_directory is not None:
         log_file = f'dask_worker_{distributed.get_worker().name}.log'
         log_file = pathlib.Path(worker_logs_directory).joinpath(log_file)
@@ -532,13 +537,13 @@ def remove_overlaps(array, crop, overlap, blocksize):
     crop_trimmed = list(crop)
     for axis in range(array.ndim):
         if crop[axis].start != 0:
-            slc = [slice(None),]*array.ndim
+            slc = [slice(None),] * array.ndim
             slc[axis] = slice(overlap, None)
             array = array[tuple(slc)]
             a, b = crop[axis].start, crop[axis].stop
             crop_trimmed[axis] = slice(a + overlap, b)
         if array.shape[axis] > blocksize[axis]:
-            slc = [slice(None),]*array.ndim
+            slc = [slice(None),] * array.ndim
             slc[axis] = slice(None, blocksize[axis])
             array = array[tuple(slc)]
             a = crop_trimmed[axis].start
@@ -551,7 +556,7 @@ def bounding_boxes_in_global_coordinates(segmentation, crop):
        best to compute them now while things are distributed"""
     boxes = scipy.ndimage.find_objects(segmentation)
     boxes = [b for b in boxes if b is not None]
-    translate = lambda a, b: slice(a.start+b.start, a.start+b.stop)
+    def translate(a, b): return slice(a.start + b.start, a.start + b.stop)
     for iii, box in enumerate(boxes):
         boxes[iii] = tuple(translate(a, b) for a, b in zip(crop, box))
     return boxes
@@ -570,8 +575,9 @@ def global_segment_ids(segmentation, block_index, nblocks):
        99999 maximum number of segments per block"""
     unique, unique_inverse = np.unique(segmentation, return_inverse=True)
     p = str(np.ravel_multi_index(block_index, nblocks))
-    remap = [np.uint32(p+str(x).zfill(5)) for x in unique]
-    if unique[0] == 0: remap[0] = np.uint32(0)  # 0 should just always be 0
+    remap = [np.uint32(p + str(x).zfill(5)) for x in unique]
+    if unique[0] == 0:
+        remap[0] = np.uint32(0)  # 0 should just always be 0
     segmentation = np.array(remap)[unique_inverse.reshape(segmentation.shape)]
     return segmentation, remap
 
@@ -589,11 +595,9 @@ def block_faces(segmentation):
     return faces
 
 
-
-
 ######################## Distributed Cellpose #################################
 
-#----------------------- The main function -----------------------------------#
+# ----------------------- The main function -----------------------------------#
 @cluster
 def distributed_eval(
     input_zarr,
@@ -749,19 +753,21 @@ def distributed_eval(
             worker_logs_directory=str(worker_logs_dir),
         )
         results = cluster.client.gather(futures)
-        if isinstance(cluster, dask_jobqueue.core.JobQueueCluster): 
+        if isinstance(cluster, dask_jobqueue.core.JobQueueCluster):
             cluster.scale(0)
 
         faces, boxes_, box_ids_ = list(zip(*results))
         boxes = [box for sublist in boxes_ for box in sublist]
-        box_ids = np.concatenate(box_ids_).astype(int)  # unsure how but without cast these are float64
-        new_labeling = determine_merge_relabeling(block_indices, faces, box_ids)
+        # unsure how but without cast these are float64
+        box_ids = np.concatenate(box_ids_).astype(int)
+        new_labeling = determine_merge_relabeling(
+            block_indices, faces, box_ids)
         debug_unique = np.unique(new_labeling)
         new_labeling_path = temporary_directory + '/new_labeling.npy'
         np.save(new_labeling_path, new_labeling)
 
         # stitching step is cheap, we should release gpus and use small workers
-        if isinstance(cluster, dask_jobqueue.core.JobQueueCluster): 
+        if isinstance(cluster, dask_jobqueue.core.JobQueueCluster):
             cluster.change_worker_attributes(
                 min_workers=cluster.locals_store['min_workers'],
                 max_workers=cluster.locals_store['max_workers'],
@@ -771,7 +777,7 @@ def distributed_eval(
                 queue=None,
                 job_extra_directives=[],
             )
-    
+
         segmentation_da = dask.array.from_zarr(temp_zarr)
         relabeled = dask.array.map_blocks(
             lambda block: np.load(new_labeling_path)[block],
@@ -784,7 +790,7 @@ def distributed_eval(
         return zarr.open(write_path, mode='r'), merged_boxes
 
 
-#----------------------- component functions ---------------------------------#
+# ----------------------- component functions ---------------------------------#
 def get_block_crops(shape, blocksize, overlap, mask):
     """Given a voxel grid shape, blocksize, and overlap size, construct
        tuples of slices for every block; optionally only include blocks
@@ -810,7 +816,8 @@ def get_block_crops(shape, blocksize, overlap, mask):
             stop = start + mask_blocksize
             stop = np.minimum(mask.shape, stop)
             mask_crop = tuple(slice(x, y) for x, y in zip(start, stop))
-            if not np.any(mask[mask_crop]): foreground = False
+            if not np.any(mask[mask_crop]):
+                foreground = False
         if foreground:
             indices.append(index)
             crops.append(crop)
@@ -830,7 +837,8 @@ def determine_merge_relabeling(block_indices, faces, used_labels):
     label_groups = block_face_adjacency_graph(faces, label_range)
     new_labeling = scipy.sparse.csgraph.connected_components(
         label_groups, directed=False)[1]
-    # XXX: new_labeling is returned as int32. Loses half range. Potentially a problem.
+    # XXX: new_labeling is returned as int32. Loses half range. Potentially a
+    # problem.
     unused_labels = np.ones(label_range + 1, dtype=bool)
     unused_labels[used_labels] = 0
     new_labeling[unused_labels] = 0
@@ -842,16 +850,16 @@ def determine_merge_relabeling(block_indices, faces, used_labels):
 def adjacent_faces(block_indices, faces):
     """Find faces which touch and pair them together in new data structure"""
     face_pairs = []
-    faces_index_lookup = {a:b for a, b in zip(block_indices, faces)}
+    faces_index_lookup = {a: b for a, b in zip(block_indices, faces)}
     for block_index in block_indices:
         for ax in range(len(block_index)):
             neighbor_index = np.array(block_index)
             neighbor_index[ax] += 1
             neighbor_index = tuple(neighbor_index)
             try:
-                a = faces_index_lookup[block_index][2*ax + 1]
-                b = faces_index_lookup[neighbor_index][2*ax]
-                face_pairs.append( np.concatenate((a, b), axis=ax) )
+                a = faces_index_lookup[block_index][2 * ax + 1]
+                b = faces_index_lookup[neighbor_index][2 * ax]
+                face_pairs.append(np.concatenate((a, b), axis=ax))
             except KeyError:
                 continue
     return face_pairs
@@ -868,16 +876,19 @@ def block_face_adjacency_graph(faces, nlabels):
     all_mappings = []
     structure = scipy.ndimage.generate_binary_structure(3, 1)
     for face in faces:
-        sl0 = tuple(slice(0, 1) if d==2 else slice(None) for d in face.shape)
-        sl1 = tuple(slice(1, 2) if d==2 else slice(None) for d in face.shape)
+        sl0 = tuple(slice(0, 1) if d == 2 else slice(None) for d in face.shape)
+        sl1 = tuple(slice(1, 2) if d == 2 else slice(None) for d in face.shape)
         a = shrink_labels(face[sl0], 1.0)
         b = shrink_labels(face[sl1], 1.0)
         face = np.concatenate((a, b), axis=np.argmin(a.shape))
-        mapped = dask_image.ndmeasure._utils._label._across_block_label_grouping(face, structure)
+        mapped = dask_image.ndmeasure._utils._label._across_block_label_grouping(
+            face, structure)
         all_mappings.append(mapped)
     i, j = np.concatenate(all_mappings, axis=1)
     v = np.ones_like(i)
-    return scipy.sparse.coo_matrix((v, (i, j)), shape=(nlabels+1, nlabels+1)).tocsr()
+    return scipy.sparse.coo_matrix(
+        (v, (i, j)), shape=(
+            nlabels + 1, nlabels + 1)).tocsr()
 
 
 def shrink_labels(plane, threshold):
@@ -920,5 +931,3 @@ def merge_boxes(boxes):
             local_union.append(slice(start, stop))
         box_union = tuple(local_union)
     return box_union
-
-

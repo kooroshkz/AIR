@@ -2,7 +2,10 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import logging
-import os, tempfile, shutil, io
+import os
+import tempfile
+import shutil
+import io
 from tqdm import tqdm, trange
 from urllib.request import urlopen
 import cv2
@@ -18,7 +21,7 @@ from . import metrics
 try:
     from skimage.morphology import remove_small_holes
     SKIMAGE_ENABLED = True
-except:
+except BaseException:
     SKIMAGE_ENABLED = False
 
 
@@ -114,8 +117,9 @@ def distance_to_boundary(masks):
 
     """
     if masks.ndim > 3 or masks.ndim < 2:
-        raise ValueError("distance_to_boundary takes 2D or 3D array, not %dD array" %
-                         masks.ndim)
+        raise ValueError(
+            "distance_to_boundary takes 2D or 3D array, not %dD array" %
+            masks.ndim)
     dist_to_bound = np.zeros(masks.shape, np.float64)
 
     if masks.ndim == 3:
@@ -191,8 +195,9 @@ def masks_to_outlines(masks):
         outlines (2D or 3D array): Size [Ly x Lx] or [Lz x Ly x Lx], where True pixels are outlines.
     """
     if masks.ndim > 3 or masks.ndim < 2:
-        raise ValueError("masks_to_outlines takes 2D or 3D array, not %dD array" %
-                         masks.ndim)
+        raise ValueError(
+            "masks_to_outlines takes 2D or 3D array, not %dD array" %
+            masks.ndim)
     outlines = np.zeros(masks.shape, bool)
 
     if masks.ndim == 3:
@@ -231,7 +236,8 @@ def outlines_list(masks, multiprocessing_threshold=1000, multiprocessing=None):
         - This function is a wrapper for outlines_list_single and outlines_list_multi.
         - Multiprocessing is disabled for Windows.
     """
-    # default to use multiprocessing if not few_masks, but allow user to override
+    # default to use multiprocessing if not few_masks, but allow user to
+    # override
     if multiprocessing is None:
         few_masks = np.max(masks) < multiprocessing_threshold
         multiprocessing = not few_masks
@@ -263,8 +269,11 @@ def outlines_list_single(masks):
     for n in np.unique(masks)[1:]:
         mn = masks == n
         if mn.sum() > 0:
-            contours = cv2.findContours(mn.astype(np.uint8), mode=cv2.RETR_EXTERNAL,
-                                        method=cv2.CHAIN_APPROX_NONE)
+            contours = cv2.findContours(
+                mn.astype(
+                    np.uint8),
+                mode=cv2.RETR_EXTERNAL,
+                method=cv2.CHAIN_APPROX_NONE)
             contours = contours[-2]
             cmax = np.argmax([c.shape[0] for c in contours])
             pix = contours[cmax].astype(int).squeeze()
@@ -290,7 +299,9 @@ def outlines_list_multi(masks, num_processes=None):
 
     unique_masks = np.unique(masks)[1:]
     with Pool(processes=num_processes) as pool:
-        outpix = pool.map(get_outline_multi, [(masks, n) for n in unique_masks])
+        outpix = pool.map(
+            get_outline_multi, [
+                (masks, n) for n in unique_masks])
     return outpix
 
 
@@ -307,8 +318,11 @@ def get_outline_multi(args):
     masks, n = args
     mn = masks == n
     if mn.sum() > 0:
-        contours = cv2.findContours(mn.astype(np.uint8), mode=cv2.RETR_EXTERNAL,
-                                    method=cv2.CHAIN_APPROX_NONE)
+        contours = cv2.findContours(
+            mn.astype(
+                np.uint8),
+            mode=cv2.RETR_EXTERNAL,
+            method=cv2.CHAIN_APPROX_NONE)
         contours = contours[-2]
         cmax = np.argmax([c.shape[0] for c in contours])
         pix = contours[cmax].astype(int).squeeze()
@@ -331,8 +345,8 @@ def dilate_masks(masks, n_iter=5):
         # define the structuring element to use for dilation
         kernel = np.ones((3, 3), "uint8")
         # find the distance to each mask (distances are zero within masks)
-        dist_transform = cv2.distanceTransform((dilated_masks == 0).astype("uint8"),
-                                               cv2.DIST_L2, 5)
+        dist_transform = cv2.distanceTransform(
+            (dilated_masks == 0).astype("uint8"), cv2.DIST_L2, 5)
         # dilate each mask and assign to it the pixels along the border of the mask
         # (does not allow dilation into other masks since dist_transform is zero there)
         for i in range(1, np.max(masks) + 1):
@@ -364,10 +378,10 @@ def get_perimeter(points):
 def get_mask_compactness(masks):
     """
     Calculate the compactness of masks.
-    
+
     Parameters:
         masks (ndarray): Binary masks representing objects.
-        
+
     Returns:
         ndarray: Array of compactness values for each mask.
     """
@@ -461,7 +475,7 @@ def get_mask_stats(masks_true):
                 hull = ConvexHull(points)
                 convex_perimeters[ic] = hull.area
                 convex_areas[ic] = hull.volume
-            except:
+            except BaseException:
                 convex_perimeters[ic] = 0
 
     convexity[mask_perimeters > 0.0] = (convex_perimeters[mask_perimeters > 0.0] /
@@ -494,7 +508,8 @@ def get_masks_unet(output, cell_threshold=0, boundary_threshold=0):
         slices = find_objects(labels)
         dists = 10000 * np.ones(labels.shape, np.float32)
         mins = np.zeros(labels.shape, np.int32)
-        borders = np.logical_and(~(labels > 0), output[..., 2] > boundary_threshold)
+        borders = np.logical_and(
+            ~(labels > 0), output[..., 2] > boundary_threshold)
         pad = 10
         for i, slc in enumerate(slices):
             if slc is not None:
@@ -544,7 +559,8 @@ def stitch3D(masks, stitch_threshold=0.25):
             iou[iou < iou.max(axis=0)] = 0.0
             istitch = iou.argmax(axis=1) + 1
             ino = np.nonzero(iou.max(axis=1) == 0.0)[0]
-            istitch[ino] = np.arange(mmax + 1, mmax + len(ino) + 1, 1, masks.dtype)
+            istitch[ino] = np.arange(
+                mmax + 1, mmax + len(ino) + 1, 1, masks.dtype)
             mmax += len(ino)
             istitch = np.append(np.array(0), istitch)
             masks[i + 1] = istitch[masks[i + 1]]
@@ -637,8 +653,9 @@ def fill_holes_and_remove_small_masks(masks, min_size=15):
     """
 
     if masks.ndim > 3 or masks.ndim < 2:
-        raise ValueError("masks_to_outlines takes 2D or 3D array, not %dD array" %
-                         masks.ndim)
+        raise ValueError(
+            "masks_to_outlines takes 2D or 3D array, not %dD array" %
+            masks.ndim)
 
     slices = find_objects(masks)
     j = 0

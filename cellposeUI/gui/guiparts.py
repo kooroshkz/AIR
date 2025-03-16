@@ -9,7 +9,8 @@ import pyqtgraph as pg
 from pyqtgraph import functions as fn
 from pyqtgraph import Point
 import numpy as np
-import pathlib, os
+import pathlib
+import os
 
 
 def stylesheet():
@@ -20,9 +21,9 @@ def stylesheet():
                     color: black;
         }
 
-        QToolTip { 
-                            background-color: black; 
-                            color: black; 
+        QToolTip {
+                            background-color: black;
+                            color: black;
                             border: black solid 1px
                             }
         QComboBox {color: white;
@@ -40,42 +41,42 @@ def stylesheet():
                     background: transparent;
                     border: none;
                     margin: 0px 0px 0px 0px;
-                } 
-                           
-        QGroupBox 
+                }
+
+        QGroupBox
             { border: 1px solid white; color: rgb(0,0,0);
                            border-radius: 6px;
                             margin-top: 8px;
-                            padding: 0px 0px;}            
-                           
-        QPushButton:pressed {Text-align: center; 
-                             background-color: rgb(150,50,150); 
+                            padding: 0px 0px;}
+
+        QPushButton:pressed {Text-align: center;
+                             background-color: rgb(150,50,150);
                              border-color: white;
                              color:white;}
-                            QToolTip { 
-                           background-color: black; 
-                           color: white; 
+                            QToolTip {
+                           background-color: black;
+                           color: white;
                            border: black solid 1px
                            }
-        QPushButton:!pressed {Text-align: center; 
+        QPushButton:!pressed {Text-align: center;
                                background-color: rgb(50,50,50);
                                 border-color: white;
                                color:white;}
-                                QToolTip { 
-                           background-color: black; 
-                           color: white; 
+                                QToolTip {
+                           background-color: black;
+                           color: white;
                            border: black solid 1px
                            }
-        QPushButton:disabled {Text-align: center; 
+        QPushButton:disabled {Text-align: center;
                              background-color: rgb(30,30,30);
                              border-color: white;
                               color:rgb(80,80,80);}
-                               QToolTip { 
-                           background-color: black; 
-                           color: white; 
+                               QToolTip {
+                           background-color: black;
+                           color: white;
                            border: black solid 1px
                            }
-                        
+
         """
 
 
@@ -198,7 +199,8 @@ class TrainWindow(QDialog):
         self.win.setLayout(self.l0)
 
         yoff = 0
-        qlabel = QLabel("train model w/ images + _seg.npy in current folder >>")
+        qlabel = QLabel(
+            "train model w/ images + _seg.npy in current folder >>")
         qlabel.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Bold))
 
         qlabel.setAlignment(QtCore.Qt.AlignVCenter)
@@ -242,16 +244,17 @@ class TrainWindow(QDialog):
         yoff += 1
         use_SGD = "SGD"
         self.useSGD = QCheckBox(f"{use_SGD}")
-        self.useSGD.setToolTip("use SGD, if unchecked uses AdamW (recommended learning_rate then 0.001)")
+        self.useSGD.setToolTip(
+            "use SGD, if unchecked uses AdamW (recommended learning_rate then 0.001)")
         self.useSGD.setChecked(True)
-        self.l0.addWidget(self.useSGD, i+yoff, 1, 1, 1)
+        self.l0.addWidget(self.useSGD, i + yoff, 1, 1, 1)
 
         yoff += len(labels)
 
         yoff += 1
         self.use_norm = QCheckBox(f"use restored/filtered image")
         self.use_norm.setChecked(True)
-        #self.l0.addWidget(self.use_norm, yoff, 0, 2, 4)
+        # self.l0.addWidget(self.use_norm, yoff, 0, 2, 4)
 
         yoff += 2
         qlabel = QLabel(
@@ -300,8 +303,8 @@ class TrainWindow(QDialog):
             "model_name": self.edits[3].text(),
             "SGD": True if self.useSGD.isChecked() else False,
             "channels": [self.ChannelChoose[0].currentIndex(),
-                            self.ChannelChoose[1].currentIndex()],
-            #"use_norm": True if self.use_norm.isChecked() else False,
+                         self.ChannelChoose[1].currentIndex()],
+            # "use_norm": True if self.use_norm.isChecked() else False,
         }
         self.done(1)
 
@@ -334,7 +337,8 @@ class HelpWindow(QDialog):
         layout = QGridLayout()
         self.win.setLayout(layout)
 
-        text_file = pathlib.Path(__file__).parent.joinpath("guihelpwindowtext.html")
+        text_file = pathlib.Path(__file__).parent.joinpath(
+            "guihelpwindowtext.html")
         with open(str(text_file.resolve()), "r") as f:
             text = f.read()
 
@@ -369,10 +373,26 @@ class TrainHelpWindow(QDialog):
 
 class ViewBoxNoRightDrag(pg.ViewBox):
 
-    def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True,
-                 invertY=False, enableMenu=True, name=None, invertX=False):
-        pg.ViewBox.__init__(self, None, border, lockAspect, enableMouse, invertY,
-                            enableMenu, name, invertX)
+    def __init__(
+            self,
+            parent=None,
+            border=None,
+            lockAspect=False,
+            enableMouse=True,
+            invertY=False,
+            enableMenu=True,
+            name=None,
+            invertX=False):
+        pg.ViewBox.__init__(
+            self,
+            None,
+            border,
+            lockAspect,
+            enableMouse,
+            invertY,
+            enableMenu,
+            name,
+            invertX)
         self.parent = parent
         self.axHistoryPointer = -1
 
@@ -412,8 +432,8 @@ class ImageDraw(pg.ImageItem):
 
     def __init__(self, image=None, viewbox=None, parent=None, **kargs):
         super(ImageDraw, self).__init__()
-        #self.image=None
-        #self.viewbox=viewbox
+        # self.image=None
+        # self.viewbox=viewbox
         self.levels = np.array([0, 255])
         self.lut = None
         self.autoDownsample = False
@@ -421,7 +441,7 @@ class ImageDraw(pg.ImageItem):
         self.removable = False
 
         self.parent = parent
-        #kernel[1,1] = 1
+        # kernel[1,1] = 1
         self.setDrawKernel(kernel_size=self.parent.brush_size)
         self.parent.current_stroke = []
         self.parent.in_stroke = False
@@ -473,25 +493,26 @@ class ImageDraw(pg.ImageItem):
         return
 
     def hoverEvent(self, ev):
-        #QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        # QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         if self.parent.in_stroke:
             if self.parent.in_stroke:
                 # continue stroke if not at start
                 self.drawAt(ev.pos())
                 if self.is_at_start(ev.pos()):
-                    #self.parent.in_stroke = False
+                    # self.parent.in_stroke = False
                     self.end_stroke()
         else:
             ev.acceptClicks(QtCore.Qt.RightButton)
-            #ev.acceptClicks(QtCore.Qt.LeftButton)
+            # ev.acceptClicks(QtCore.Qt.LeftButton)
 
     def create_start(self, pos):
-        self.scatter = pg.ScatterPlotItem([pos.x()], [pos.y()], pxMode=False,
-                                          pen=pg.mkPen(color=(255, 0, 0),
-                                                       width=self.parent.brush_size),
-                                          size=max(3 * 2,
-                                                   self.parent.brush_size * 1.8 * 2),
-                                          brush=None)
+        self.scatter = pg.ScatterPlotItem(
+            [
+                pos.x()], [
+                pos.y()], pxMode=False, pen=pg.mkPen(
+                color=(
+                    255, 0, 0), width=self.parent.brush_size), size=max(
+                        3 * 2, self.parent.brush_size * 1.8 * 2), brush=None)
         self.parent.p0.addItem(self.scatter)
 
     def is_at_start(self, pos):
@@ -503,11 +524,12 @@ class ImageDraw(pg.ImageItem):
             dist = (((stroke[1:, 1:] -
                       stroke[:1, 1:][np.newaxis, :, :])**2).sum(axis=-1))**0.5
             dist = dist.flatten()
-            #print(dist)
+            # print(dist)
             has_left = (dist > thresh_out).nonzero()[0]
             if len(has_left) > 0:
                 first_left = np.sort(has_left)[0]
-                has_returned = (dist[max(4, first_left + 1):] < thresh_in).sum()
+                has_returned = (
+                    dist[max(4, first_left + 1):] < thresh_in).sum()
                 if has_returned > 0:
                     return True
                 else:
@@ -534,9 +556,9 @@ class ImageDraw(pg.ImageItem):
 
     def tabletEvent(self, ev):
         pass
-        #print(ev.device())
-        #print(ev.pointerType())
-        #print(ev.pressure())
+        # print(ev.device())
+        # print(ev.pointerType())
+        # print(ev.pressure())
 
     def drawAt(self, pos, ev=None):
         mask = self.strokemask
@@ -593,5 +615,7 @@ class ImageDraw(pg.ImageItem):
         onmask = 255 * kernel[:, :, np.newaxis]
         offmask = np.zeros((bs, bs, 1))
         opamask = 100 * kernel[:, :, np.newaxis]
-        self.redmask = np.concatenate((onmask, offmask, offmask, onmask), axis=-1)
-        self.strokemask = np.concatenate((onmask, offmask, onmask, opamask), axis=-1)
+        self.redmask = np.concatenate(
+            (onmask, offmask, offmask, onmask), axis=-1)
+        self.strokemask = np.concatenate(
+            (onmask, offmask, onmask, opamask), axis=-1)

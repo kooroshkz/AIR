@@ -17,10 +17,11 @@ from qtpy.QtWidgets import (
 from .global_model_state import GlobalModelState
 from .utils import DropdownPopup
 
+
 class Pipeline():
     def __init__(self) -> None:
         self.workflow: Dict[int, Callable] = {}
-        self.final_stage : GlobalModelState | None = None
+        self.final_stage: GlobalModelState | None = None
         self.name: str = ""
 
     def __len__(self):
@@ -327,15 +328,15 @@ class WorkflowWidget(QWidget):
         self.repaint()  # Ensure the UI redraws fully
 
     def get_pipelines(self) -> Pipeline | None:
-        #prompts the user to select a pipeline, if theres one to choose
+        # prompts the user to select a pipeline, if theres one to choose
 
-        options : List[Tuple[str, Pipeline]]= []
+        options: List[Tuple[str, Pipeline]] = []
 
         for _, pipeline in self.workflows.items():
             options.append((pipeline.name, pipeline))
 
         options.append(("no pipeline", Pipeline()))
-        
+
         popup = DropdownPopup([x[0] for x in options])
 
         if popup.exec_():
@@ -343,8 +344,9 @@ class WorkflowWidget(QWidget):
             selected_pipeline = popup.get_selected_option()
             print(f"you selected: {selected_pipeline}")
 
-            #grab the name, pipeline pair with the matching name
-            return_pipeline = next((t for t in options if t[0] == selected_pipeline), None)
+            # grab the name, pipeline pair with the matching name
+            return_pipeline = next(
+                (t for t in options if t[0] == selected_pipeline), None)
 
             if return_pipeline is None:
                 return None

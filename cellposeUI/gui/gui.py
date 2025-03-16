@@ -2,7 +2,13 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import sys, os, pathlib, warnings, datetime, time, copy
+import sys
+import os
+import pathlib
+import warnings
+import datetime
+import time
+import copy
 
 from qtpy import QtGui, QtCore
 from superqt import QRangeSlider, QCollapsible
@@ -26,7 +32,7 @@ from ..plot import disk
 try:
     import matplotlib.pyplot as plt
     MATPLOTLIB = True
-except:
+except BaseException:
     MATPLOTLIB = False
 
 try:
@@ -34,7 +40,7 @@ try:
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "key/cellpose-data-writer.json")
     SERVER_UPLOAD = True
-except:
+except BaseException:
     SERVER_UPLOAD = False
 
 Horizontal = QtCore.Qt.Orientation.Horizontal
@@ -63,13 +69,14 @@ class QHLine(QFrame):
     def __init__(self):
         super(QHLine, self).__init__()
         self.setFrameShape(QFrame.HLine)
-        #self.setFrameShadow(QFrame.Sunken)
+        # self.setFrameShadow(QFrame.Sunken)
         self.setLineWidth(8)
 
 
 def make_bwr():
     # make a bwr colormap
-    b = np.append(255 * np.ones(128), np.linspace(0, 255, 128)[::-1])[:, np.newaxis]
+    b = np.append(255 * np.ones(128), np.linspace(0, 255, 128)
+                  [::-1])[:, np.newaxis]
     r = np.append(np.linspace(0, 255, 128), 255 * np.ones(128))[:, np.newaxis]
     g = np.append(np.linspace(0, 255, 128),
                   np.linspace(0, 255, 128)[::-1])[:, np.newaxis]
@@ -192,7 +199,9 @@ class MainW(QMainWindow):
 
     def call_init(self):
 
-        print(f"[LUIS] initialized a main window with napari interface \nintialized with attached pipeline: {ModelInterface.preprocessing_pipeline}")
+        print(
+            f"[LUIS] initialized a main window with napari interface \nintialized with attached pipeline: {
+                ModelInterface.preprocessing_pipeline}")
 
         pg.setConfigOptions(imageAxisOrder="row-major")
 
@@ -229,22 +238,22 @@ class MainW(QMainWindow):
         menus.modelmenu(self)
         menus.helpmenu(self)
 
-        self.stylePressed = """QPushButton {Text-align: center; 
-                             background-color: rgb(150,50,150); 
+        self.stylePressed = """QPushButton {Text-align: center;
+                             background-color: rgb(150,50,150);
                              border-color: white;
                              color:white;}
-                            QToolTip { 
-                           background-color: black; 
-                           color: white; 
+                            QToolTip {
+                           background-color: black;
+                           color: white;
                            border: black solid 1px
                            }"""
-        self.styleUnpressed = """QPushButton {Text-align: center; 
+        self.styleUnpressed = """QPushButton {Text-align: center;
                                background-color: rgb(50,50,50);
                                 border-color: white;
                                color:white;}
-                                QToolTip { 
-                           background-color: black; 
-                           color: white; 
+                                QToolTip {
+                           background-color: black;
+                           color: white;
                            border: black solid 1px
                            }"""
         self.loaded = False
@@ -306,16 +315,23 @@ class MainW(QMainWindow):
         # single channel colormaps
         for i in range(3):
             self.cmap.append(
-                make_cmap(i).getLookupTable(start=0.0, stop=255.0, alpha=False))
+                make_cmap(i).getLookupTable(
+                    start=0.0, stop=255.0, alpha=False))
 
         if MATPLOTLIB:
-            self.colormap = (plt.get_cmap("gist_ncar")(np.linspace(0.0, .9, 1000000)) *
-                             255).astype(np.uint8)
+            self.colormap = (plt.get_cmap("gist_ncar")(
+                np.linspace(0.0, .9, 1000000)) * 255).astype(np.uint8)
             np.random.seed(42)  # make colors stable
             self.colormap = self.colormap[np.random.permutation(1000000)]
         else:
             np.random.seed(42)  # make colors stable
-            self.colormap = ((np.random.rand(1000000, 3) * 0.8 + 0.1) * 255).astype(
+            self.colormap = (
+                (np.random.rand(
+                    1000000,
+                    3) *
+                    0.8 +
+                    0.1) *
+                255).astype(
                 np.uint8)
         self.NZ = 1
         self.restore = None
@@ -411,7 +427,8 @@ class MainW(QMainWindow):
         self.satBoxG.addWidget(label, b0, 0, 1, 5)
 
         self.autobtn = QCheckBox("auto-adjust saturation")
-        self.autobtn.setToolTip("sets scale-bars as normalized for segmentation")
+        self.autobtn.setToolTip(
+            "sets scale-bars as normalized for segmentation")
         self.autobtn.setFont(self.medfont)
         self.autobtn.setChecked(True)
         self.satBoxG.addWidget(self.autobtn, b0, 1, 1, 8)
@@ -437,7 +454,7 @@ class MainW(QMainWindow):
             self.sliders[-1].setToolTip(
                 "NOTE: manually changing the saturation bars does not affect normalization in segmentation"
             )
-            #self.sliders[-1].setTickPosition(QSlider.TicksRight)
+            # self.sliders[-1].setTickPosition(QSlider.TicksRight)
             self.satBoxG.addWidget(self.sliders[-1], b0, 2, 1, 7)
 
         b += 1
@@ -500,7 +517,8 @@ class MainW(QMainWindow):
         self.MakeDeletionRegionButton.setFont(self.smallfont)
         self.MakeDeletionRegionButton.setFixedWidth(70)
         self.DeleteMultipleROIButton = QPushButton("click-select")
-        self.DeleteMultipleROIButton.clicked.connect(self.delete_multiple_cells)
+        self.DeleteMultipleROIButton.clicked.connect(
+            self.delete_multiple_cells)
         self.deleteBoxG.addWidget(self.DeleteMultipleROIButton, 1, 0, 1, 4)
         self.DeleteMultipleROIButton.setFont(self.smallfont)
         self.DeleteMultipleROIButton.setFixedWidth(70)
@@ -511,8 +529,10 @@ class MainW(QMainWindow):
         self.DoneDeleteMultipleROIButton.setFont(self.smallfont)
         self.DoneDeleteMultipleROIButton.setFixedWidth(35)
         self.CancelDeleteMultipleROIButton = QPushButton("cancel")
-        self.CancelDeleteMultipleROIButton.clicked.connect(self.cancel_remove_multiple)
-        self.deleteBoxG.addWidget(self.CancelDeleteMultipleROIButton, 2, 2, 1, 2)
+        self.CancelDeleteMultipleROIButton.clicked.connect(
+            self.cancel_remove_multiple)
+        self.deleteBoxG.addWidget(
+            self.CancelDeleteMultipleROIButton, 2, 2, 1, 2)
         self.CancelDeleteMultipleROIButton.setFont(self.smallfont)
         self.CancelDeleteMultipleROIButton.setFixedWidth(35)
 
@@ -546,7 +566,7 @@ class MainW(QMainWindow):
         self.SizeButton.setFont(self.medfont)
         self.SizeButton.clicked.connect(self.calibrate_size)
         self.segBoxG.addWidget(self.SizeButton, b0, 6, 1, 3)
-        #self.SizeButton.setFixedWidth(65)
+        # self.SizeButton.setFixedWidth(65)
         self.SizeButton.setEnabled(False)
         self.SizeButton.setToolTip(
             'you can manually enter the approximate diameter for your cells, \nor press “calibrate” to let the cyto3 model estimate it. \nThe size is represented by a disk at the bottom of the view window \n(can turn this disk off by unchecking “scale disk on”)'
@@ -555,8 +575,10 @@ class MainW(QMainWindow):
         b0 += 1
         # choose channel
         self.ChannelChoose = [QComboBox(), QComboBox()]
-        self.ChannelChoose[0].addItems(["0: gray", "1: red", "2: green", "3: blue"])
-        self.ChannelChoose[1].addItems(["0: none", "1: red", "2: green", "3: blue"])
+        self.ChannelChoose[0].addItems(
+            ["0: gray", "1: red", "2: green", "3: blue"])
+        self.ChannelChoose[1].addItems(
+            ["0: none", "1: red", "2: green", "3: blue"])
         cstr = ["chan to segment:", "chan2 (optional): "]
         for i in range(2):
             self.ChannelChoose[i].setFont(self.medfont)
@@ -594,10 +616,10 @@ class MainW(QMainWindow):
         self.net_text = ["run cyto3"]
         nett = ["cellpose super-generalist model"]
 
-        #label = QLabel("Run:")
-        #label.setFont(self.boldfont)
-        #label.setFont(self.medfont)
-        #self.segBoxG.addWidget(label, b0, 0, 1, 2)
+        # label = QLabel("Run:")
+        # label.setFont(self.boldfont)
+        # label.setFont(self.medfont)
+        # self.segBoxG.addWidget(label, b0, 0, 1, 2)
         self.StyleButtons = []
         jj = 4
         for j in range(len(self.net_text)):
@@ -606,7 +628,7 @@ class MainW(QMainWindow):
             w = 5
             self.segBoxG.addWidget(self.StyleButtons[-1], b0, jj, 1, w)
             jj += w
-            #self.StyleButtons[-1].setFixedWidth(140)
+            # self.StyleButtons[-1].setFixedWidth(140)
             self.StyleButtons[-1].setToolTip(nett[j])
 
         b0 += 1
@@ -627,7 +649,7 @@ class MainW(QMainWindow):
         _content.setLayout(self.segaBoxG)
         _content.setMaximumHeight(0)
         _content.setMinimumHeight(0)
-        #_content.layout().setContentsMargins(QtCore.QMargins(0, -20, -20, -20))
+        # _content.layout().setContentsMargins(QtCore.QMargins(0, -20, -20, -20))
         self.segaBox.setContent(_content)
         self.segBoxG.addWidget(self.segaBox, b0, 0, 1, 9)
 
@@ -690,7 +712,8 @@ class MainW(QMainWindow):
             self.norm_edits[p].setText(str(self.norm_vals[p]))
             self.norm_edits[p].setFixedWidth(40)
             self.norm_edits[p].setFont(self.medfont)
-            self.segaBoxG.addWidget(self.norm_edits[p], b0, 4 * (p % 2) + 2, 1, 2)
+            self.segaBoxG.addWidget(
+                self.norm_edits[p], b0, 4 * (p % 2) + 2, 1, 2)
             self.norm_edits[p].setToolTip(tooltips[p])
 
         b0 += 1
@@ -727,7 +750,8 @@ class MainW(QMainWindow):
         self.ModelChooseC.setCurrentIndex(current_index)
         tipstr = 'add or train your own models in the "Models" file menu and choose model here'
         self.ModelChooseC.setToolTip(tipstr)
-        self.ModelChooseC.activated.connect(lambda: self.model_choose(custom=True))
+        self.ModelChooseC.activated.connect(
+            lambda: self.model_choose(custom=True))
         self.modelBoxG.addWidget(self.ModelChooseC, b0, 0, 1, 8)
 
         # compute segmentation w/ custom model
@@ -740,16 +764,32 @@ class MainW(QMainWindow):
         self.ModelButtonC.setEnabled(False)
 
         self.net_names = [
-            "nuclei", "cyto2_cp3", "tissuenet_cp3", "livecell_cp3", "yeast_PhC_cp3",
-            "yeast_BF_cp3", "bact_phase_cp3", "bact_fluor_cp3", "deepbacs_cp3",
-            "cyto", "cyto2", "CPx"]
+            "nuclei",
+            "cyto2_cp3",
+            "tissuenet_cp3",
+            "livecell_cp3",
+            "yeast_PhC_cp3",
+            "yeast_BF_cp3",
+            "bact_phase_cp3",
+            "bact_fluor_cp3",
+            "deepbacs_cp3",
+            "cyto",
+            "cyto2",
+            "CPx"]
 
         nett = [
-            "nuclei", "cellpose (cyto2_cp3)", "tissuenet_cp3", "livecell_cp3",
-            "yeast_PhC_cp3", "yeast_BF_cp3", "bact_phase_cp3", "bact_fluor_cp3",
-            "deepbacs_cp3", "cyto", "cyto2",
-            "CPx (from Cellpose2)"
-        ]
+            "nuclei",
+            "cellpose (cyto2_cp3)",
+            "tissuenet_cp3",
+            "livecell_cp3",
+            "yeast_PhC_cp3",
+            "yeast_BF_cp3",
+            "bact_phase_cp3",
+            "bact_fluor_cp3",
+            "deepbacs_cp3",
+            "cyto",
+            "cyto2",
+            "CPx (from Cellpose2)"]
         b0 += 1
         self.ModelChooseB = QComboBox()
         self.ModelChooseB.setFont(self.medfont)
@@ -758,7 +798,8 @@ class MainW(QMainWindow):
         self.ModelChooseB.setFixedWidth(175)
         tipstr = "dataset-specific models"
         self.ModelChooseB.setToolTip(tipstr)
-        self.ModelChooseB.activated.connect(lambda: self.model_choose(custom=False))
+        self.ModelChooseB.activated.connect(
+            lambda: self.model_choose(custom=False))
         self.modelBoxG.addWidget(self.ModelChooseB, b0, 0, 1, 8)
 
         # compute segmentation w/ cp model
@@ -778,7 +819,7 @@ class MainW(QMainWindow):
         self.l0.addWidget(self.denoiseBox, b, 0, 1, 9)
 
         b0 = 0
-        
+
         # DENOISING
         self.DenoiseButtons = []
         nett = [
@@ -787,9 +828,14 @@ class MainW(QMainWindow):
             "denoise (please set cell diameter first)",
             "deblur (please set cell diameter first)",
             "upsample to 30. diameter (cyto3) or 17. diameter (nuclei) (please set cell diameter first) (disabled in 3D)",
-            "one-click model trained to denoise+deblur+upsample (please set cell diameter first)"
-        ]
-        self.denoise_text = ["none", "filter", "denoise", "deblur", "upsample", "one-click"]
+            "one-click model trained to denoise+deblur+upsample (please set cell diameter first)"]
+        self.denoise_text = [
+            "none",
+            "filter",
+            "denoise",
+            "deblur",
+            "upsample",
+            "one-click"]
         self.restore = None
         self.ratio = 1.
         jj = 0
@@ -801,13 +847,14 @@ class MainW(QMainWindow):
             self.DenoiseButtons[-1].setFixedWidth(75)
             self.DenoiseButtons[-1].setToolTip(nett[j])
             self.DenoiseButtons[-1].setFont(self.medfont)
-            b0 += 1 if j%2==1 else 0
-            jj = 0 if j%2==1 else jj + w
+            b0 += 1 if j % 2 == 1 else 0
+            jj = 0 if j % 2 == 1 else jj + w
 
         # b0+=1
         self.save_norm = QCheckBox("save restored/filtered image")
         self.save_norm.setFont(self.medfont)
-        self.save_norm.setToolTip("save restored/filtered image in _seg.npy file")
+        self.save_norm.setToolTip(
+            "save restored/filtered image in _seg.npy file")
         self.save_norm.setChecked(True)
         # self.denoiseBoxG.addWidget(self.save_norm, b0, 0, 1, 8)
 
@@ -836,7 +883,7 @@ class MainW(QMainWindow):
         _content.setLayout(self.filtBoxG)
         _content.setMaximumHeight(0)
         _content.setMinimumHeight(0)
-        #_content.layout().setContentsMargins(QtCore.QMargins(0, -20, -20, -20))
+        # _content.layout().setContentsMargins(QtCore.QMargins(0, -20, -20, -20))
         self.filtBox.setContent(_content)
         self.denoiseBoxG.addWidget(self.filtBox, b0, 0, 1, 9)
 
@@ -862,8 +909,8 @@ class MainW(QMainWindow):
             self.filt_edits[p].setText(str(self.filt_vals[p]))
             self.filt_edits[p].setFixedWidth(40)
             self.filt_edits[p].setFont(self.medfont)
-            self.filtBoxG.addWidget(self.filt_edits[p], b0 + p // 2, 4 * (p % 2) + 2, 1,
-                                    2)
+            self.filtBoxG.addWidget(
+                self.filt_edits[p], b0 + p // 2, 4 * (p % 2) + 2, 1, 2)
             self.filt_edits[p].setToolTip(tooltips[p])
 
         b0 += 3
@@ -918,8 +965,9 @@ class MainW(QMainWindow):
                 else:
                     nviews = self.ViewDropDown.count() - 1
                     nviews += int(
-                        self.ViewDropDown.model().item(self.ViewDropDown.count() -
-                                                       1).isEnabled())
+                        self.ViewDropDown.model().item(
+                            self.ViewDropDown.count() -
+                            1).isEnabled())
                     if event.key() == QtCore.Qt.Key_X:
                         self.MCheckBox.toggle()
                     if event.key() == QtCore.Qt.Key_Z:
@@ -996,8 +1044,8 @@ class MainW(QMainWindow):
 
     def get_channels(self):
         channels = [
-            self.ChannelChoose[0].currentIndex(), self.ChannelChoose[1].currentIndex()
-        ]
+            self.ChannelChoose[0].currentIndex(),
+            self.ChannelChoose[1].currentIndex()]
         if hasattr(self, "current_model"):
             if self.current_model == "nuclei":
                 channels[1] = 0
@@ -1009,13 +1057,11 @@ class MainW(QMainWindow):
             if channels[0] == 3:
                 channels[0] = 1 if channels[1] != 1 else 2
                 print(
-                    f"GUI_WARNING: only two channels in image, cannot use blue channel, changing channels"
-                )
+                    f"GUI_WARNING: only two channels in image, cannot use blue channel, changing channels")
             if channels[1] == 3:
                 channels[1] = 1 if channels[0] != 1 else 2
                 print(
-                    f"GUI_WARNING: only two channels in image, cannot use blue channel, changing channels"
-                )
+                    f"GUI_WARNING: only two channels in image, cannot use blue channel, changing channels")
         self.ChannelChoose[0].setCurrentIndex(channels[0])
         self.ChannelChoose[1].setCurrentIndex(channels[1])
         return channels
@@ -1033,7 +1079,8 @@ class MainW(QMainWindow):
             self.diameter = self.model.diam_labels
             self.Diameter.setText("%0.2f" % self.diameter)
             print(
-                f"GUI_INFO: diameter set to {self.diameter: 0.2f} (but can be changed)")
+                f"GUI_INFO: diameter set to {
+                    self.diameter: 0.2f} (but can be changed)")
 
     def calibrate_size(self):
         self.initialize_model(model_name="cyto3")
@@ -1041,8 +1088,9 @@ class MainW(QMainWindow):
                                       channels=self.get_channels(),
                                       progress=self.progress)
         diams = np.maximum(5.0, diams)
-        self.logger.info("estimated diameter of cells using %s model = %0.1f pixels" %
-                         (self.current_model, diams))
+        self.logger.info(
+            "estimated diameter of cells using %s model = %0.1f pixels" %
+            (self.current_model, diams))
         self.Diameter.setText("%0.1f" % diams)
         self.diameter = diams
         self.update_scale()
@@ -1182,7 +1230,11 @@ class MainW(QMainWindow):
         if os.path.splitext(files[0])[-1] == ".npy":
             io._load_seg(self, filename=files[0], load_3D=self.load_3D)
         else:
-            io._load_image(self, filename=files[0], load_seg=True, load_3D=self.load_3D)
+            io._load_image(
+                self,
+                filename=files[0],
+                load_seg=True,
+                load_3D=self.load_3D)
 
     def toggle_masks(self):
         if self.MCheckBox.isChecked():
@@ -1206,9 +1258,9 @@ class MainW(QMainWindow):
             self.update_layer()
 
     def make_viewbox(self):
-        self.p0 = guiparts.ViewBoxNoRightDrag(parent=self, lockAspect=True,
-                                              name="plot1", border=[100, 100,
-                                                                    100], invertY=True)
+        self.p0 = guiparts.ViewBoxNoRightDrag(
+            parent=self, lockAspect=True, name="plot1", border=[
+                100, 100, 100], invertY=True)
         self.p0.setCursor(QtCore.Qt.CrossCursor)
         self.brush_size = 3
         self.win.addItem(self.p0, 0, 0, rowspan=1, colspan=1)
@@ -1221,7 +1273,7 @@ class MainW(QMainWindow):
         self.scale = pg.ImageItem(viewbox=self.p0, parent=self)
         self.scale.setLevels([0, 255])
         self.p0.scene().contextMenuItem = self.p0
-        #self.p0.setMouseEnabled(x=False,y=False)
+        # self.p0.setMouseEnabled(x=False,y=False)
         self.Ly, self.Lx = 512, 512
         self.p0.addItem(self.img)
         self.p0.addItem(self.layer)
@@ -1281,7 +1333,7 @@ class MainW(QMainWindow):
 
         self.clear_all()
 
-        #self.update_plot()
+        # self.update_plot()
         self.filename = []
         self.loaded = False
         self.recompute_masks = False
@@ -1327,8 +1379,10 @@ class MainW(QMainWindow):
             self.outpix = np.zeros((self.NZ, self.Lyr, self.Lxr), np.uint16)
             self.cellpix_resize = self.cellpix.copy()
             self.outpix_resize = self.outpix.copy()
-            self.cellpix_orig = np.zeros((self.NZ, self.Ly0, self.Lx0), np.uint16)
-            self.outpix_orig = np.zeros((self.NZ, self.Ly0, self.Lx0), np.uint16)
+            self.cellpix_orig = np.zeros(
+                (self.NZ, self.Ly0, self.Lx0), np.uint16)
+            self.outpix_orig = np.zeros(
+                (self.NZ, self.Ly0, self.Lx0), np.uint16)
         else:
             self.layerz = 0 * np.ones((self.Ly, self.Lx, 4), np.uint8)
             self.cellpix = np.zeros((self.NZ, self.Ly, self.Lx), np.uint16)
@@ -1364,9 +1418,9 @@ class MainW(QMainWindow):
                 self.layerz[self.cellpix[z] == idx] = np.append(
                     self.cellcolors[idx], self.opacity)
                 if self.outlinesOn:
-                    self.layerz[self.outpix[z] == idx] = np.array(self.outcolor).astype(
-                        np.uint8)
-                    #[0,0,0,self.opacity])
+                    self.layerz[self.outpix[z] == idx] = np.array(
+                        self.outcolor).astype(np.uint8)
+                    # [0,0,0,self.opacity])
                 self.update_layer()
         self.selected = 0
 
@@ -1375,8 +1429,8 @@ class MainW(QMainWindow):
         self.layerz[self.cellpix[z] == idx] = np.append(self.cellcolors[idx],
                                                         self.opacity)
         if self.outlinesOn:
-            self.layerz[self.outpix[z] == idx] = np.array(self.outcolor).astype(
-                np.uint8)
+            self.layerz[self.outpix[z] == idx] = np.array(
+                self.outcolor).astype(np.uint8)
             # [0,0,0,self.opacity])
         self.update_layer()
 
@@ -1446,15 +1500,18 @@ class MainW(QMainWindow):
 
         self.clear_multi_selected_cells()
 
-        # make roi region here in center of view, making ROI half the size of the view
+        # make roi region here in center of view, making ROI half the size of
+        # the view
         roi_width = self.p0.viewRect().width() / 2
         x_loc = self.p0.viewRect().x() + (roi_width / 2)
         roi_height = self.p0.viewRect().height() / 2
         y_loc = self.p0.viewRect().y() + (roi_height / 2)
 
         pos = [x_loc, y_loc]
-        roi = pg.RectROI(pos, [roi_width, roi_height], pen=pg.mkPen("y", width=2),
-                         removable=True)
+        roi = pg.RectROI(
+            pos, [
+                roi_width, roi_height], pen=pg.mkPen(
+                "y", width=2), removable=True)
         roi.sigRemoveRequested.connect(self.remove_roi)
         roi.sigRegionChangeFinished.connect(self.roi_changed)
         self.p0.addItem(roi)
@@ -1515,7 +1572,8 @@ class MainW(QMainWindow):
                     vr = np.hstack((vr0, vr1))
                     vc = np.hstack((vc0, vc1))
                 color = self.cellcolors[self.prev_selected]
-                self.draw_mask(z, ar, ac, vr, vc, color, idx=self.prev_selected)
+                self.draw_mask(
+                    z, ar, ac, vr, vc, color, idx=self.prev_selected)
             self.remove_cell(self.selected)
             print("GUI_INFO: merged two cells")
             self.update_layer()
@@ -1531,7 +1589,8 @@ class MainW(QMainWindow):
             color = self.removed_cell[1]
             self.draw_mask(z, ar, ac, vr, vc, color)
             self.toggle_mask_ops()
-            self.cellcolors = np.append(self.cellcolors, color[np.newaxis, :], axis=0)
+            self.cellcolors = np.append(
+                self.cellcolors, color[np.newaxis, :], axis=0)
             self.ncells += 1
             self.ismanual = np.append(self.ismanual, self.removed_cell[0])
             self.zdraw.append([])
@@ -1547,7 +1606,8 @@ class MainW(QMainWindow):
         inZ = stroke[0, 0] == cZ
         if inZ:
             outpix = self.outpix[cZ, stroke[:, 1], stroke[:, 2]] > 0
-            self.layerz[stroke[~outpix, 1], stroke[~outpix, 2]] = np.array([0, 0, 0, 0])
+            self.layerz[stroke[~outpix, 1], stroke[~outpix, 2]] = np.array([
+                                                                           0, 0, 0, 0])
             cellpix = self.cellpix[cZ, stroke[:, 1], stroke[:, 2]]
             ccol = self.cellcolors.copy()
             if self.selected > 0:
@@ -1557,12 +1617,12 @@ class MainW(QMainWindow):
                 col2mask = np.concatenate(
                     (col2mask, self.opacity * (cellpix[:, np.newaxis] > 0)), axis=-1)
             else:
-                col2mask = np.concatenate((col2mask, 0 * (cellpix[:, np.newaxis] > 0)),
-                                          axis=-1)
+                col2mask = np.concatenate(
+                    (col2mask, 0 * (cellpix[:, np.newaxis] > 0)), axis=-1)
             self.layerz[stroke[:, 1], stroke[:, 2], :] = col2mask
             if self.outlinesOn:
-                self.layerz[stroke[outpix, 1], stroke[outpix,
-                                                      2]] = np.array(self.outcolor)
+                self.layerz[stroke[outpix, 1], stroke[outpix, 2]
+                            ] = np.array(self.outcolor)
             if delete_points:
                 # self.current_point_set = self.current_point_set[:-1*(stroke[:,-1]==1).sum()]
                 del self.current_point_set[stroke_ind]
@@ -1571,13 +1631,12 @@ class MainW(QMainWindow):
         del self.strokes[stroke_ind]
 
     def plot_clicked(self, event):
-        if event.button()==QtCore.Qt.LeftButton \
-                and not event.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier)\
-                and not self.removing_region:
+        if event.button() == QtCore.Qt.LeftButton and not event.modifiers() & (
+                QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier) and not self.removing_region:
             if event.double():
                 try:
                     self.p0.setYRange(0, self.Ly + self.pr)
-                except:
+                except BaseException:
                     self.p0.setYRange(0, self.Ly)
                 self.p0.setXRange(0, self.Lx)
 
@@ -1622,7 +1681,8 @@ class MainW(QMainWindow):
         # find cells in that region
         cell_idxs = np.unique(self.cellpix[self.currentZ, y0:y1, x0:x1])
         cell_idxs = np.trim_zeros(cell_idxs)
-        # deselect cells not in region by deselecting all and then selecting the ones in the region
+        # deselect cells not in region by deselecting all and then selecting
+        # the ones in the region
         self.clear_multi_selected_cells()
 
         for idx in cell_idxs:
@@ -1678,9 +1738,11 @@ class MainW(QMainWindow):
             elif self.color > 0 and self.color < 4:
                 if self.nchan > 1:
                     image = image[:, :, self.color - 1]
-                self.img.setImage(image, autoLevels=False, lut=self.cmap[self.color])
+                self.img.setImage(image, autoLevels=False,
+                                  lut=self.cmap[self.color])
                 if self.nchan > 1:
-                    self.img.setLevels(self.saturation[self.color - 1][self.currentZ])
+                    self.img.setLevels(
+                        self.saturation[self.color - 1][self.currentZ])
                 else:
                     self.img.setLevels(self.saturation[0][self.currentZ])
             elif self.color == 4:
@@ -1695,7 +1757,8 @@ class MainW(QMainWindow):
                 self.img.setLevels(self.saturation[0][self.currentZ])
         else:
             image = np.zeros((self.Ly, self.Lx), np.uint8)
-            if len(self.flows) >= self.view - 1 and len(self.flows[self.view - 1]) > 0:
+            if len(self.flows) >= self.view - \
+                    1 and len(self.flows[self.view - 1]) > 0:
                 image = self.flows[self.view - 1][self.currentZ]
             if self.view > 1:
                 self.img.setImage(image, autoLevels=False, lut=self.bwr)
@@ -1713,7 +1776,7 @@ class MainW(QMainWindow):
 
     def update_layer(self):
         if self.masksOn or self.outlinesOn:
-            #self.draw_layer()
+            # self.draw_layer()
             self.layer.setImage(self.layerz, autoLevels=False)
         self.update_roi_count()
         self.win.show()
@@ -1728,12 +1791,13 @@ class MainW(QMainWindow):
                 self.remove_stroke(delete_points=False)
             if len(self.current_point_set[0]) > 8:
                 color = self.colormap[self.ncells, :3]
-                median = self.add_mask(points=self.current_point_set, color=color)
+                median = self.add_mask(
+                    points=self.current_point_set, color=color)
                 if median is not None:
                     self.removed_cell = []
                     self.toggle_mask_ops()
-                    self.cellcolors = np.append(self.cellcolors, color[np.newaxis, :],
-                                                axis=0)
+                    self.cellcolors = np.append(
+                        self.cellcolors, color[np.newaxis, :], axis=0)
                     self.ncells += 1
                     self.ismanual = np.append(self.ismanual, True)
                     if self.NZ == 1:
@@ -1749,7 +1813,7 @@ class MainW(QMainWindow):
     def add_mask(self, points=None, color=(100, 200, 50), dense=True):
         # points is list of strokes
         points_all = np.concatenate(points, axis=0)
-        
+
         # loop over z values
         median = []
         zdraw = np.unique(points_all[:, 0])
@@ -1768,8 +1832,9 @@ class MainW(QMainWindow):
             ar, ac = np.nonzero(mask)
             ar, ac = ar + vr.min() - 2, ac + vc.min() - 2
             # get dense outline
-            contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            pvc, pvr = contours[-2][0][:,0].T
+            contours = cv2.findContours(
+                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            pvc, pvr = contours[-2][0][:, 0].T
             vr, vc = pvr + vr.min() - 2, pvc + vc.min() - 2
             # concatenate all points
             ar, ac = np.hstack((np.vstack((vr, vc)), np.vstack((ar, ac))))
@@ -1785,13 +1850,13 @@ class MainW(QMainWindow):
                 mask[ar - vr.min() + 2, ac - vc.min() + 2] = 1
                 contours = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_NONE)
-                pvc, pvr = contours[-2][0][:,0].T
+                pvc, pvr = contours[-2][0][:, 0].T
                 vr, vc = pvr + vr.min() - 2, pvc + vc.min() - 2
             ars = np.concatenate((ars, ar), axis=0)
             acs = np.concatenate((acs, ac), axis=0)
             vrs = np.concatenate((vrs, vr), axis=0)
             vcs = np.concatenate((vcs, vc), axis=0)
-            
+
         self.draw_mask(z, ars, acs, vrs, vcs, color)
         median.append(np.array([np.median(ars), np.median(acs)]))
 
@@ -1839,7 +1904,10 @@ class MainW(QMainWindow):
                 pvc, pvr = contours[-2][0].squeeze().T
                 vrr, vcr = pvr + vrr.min() - 2, pvc + vcr.min() - 2
                 # concatenate all points
-                arr, acr = np.hstack((np.vstack((vrr, vcr)), np.vstack((arr, acr))))
+                arr, acr = np.hstack(
+                    (np.vstack(
+                        (vrr, vcr)), np.vstack(
+                        (arr, acr))))
                 self.cellpix_resize[z, vrr, vcr] = idx
                 self.cellpix_resize[z, arr, acr] = idx
                 self.outpix_resize[z, vrr, vcr] = idx
@@ -1855,7 +1923,8 @@ class MainW(QMainWindow):
         self.diameter = float(self.Diameter.text())
         self.pr = int(float(self.Diameter.text()))
         self.radii_padding = int(self.pr * 1.25)
-        self.radii = np.zeros((self.Ly + self.radii_padding, self.Lx, 4), np.uint8)
+        self.radii = np.zeros(
+            (self.Ly + self.radii_padding, self.Lx, 4), np.uint8)
         yy, xx = disk([self.Ly + self.radii_padding / 2 - 1, self.pr / 2 + 1],
                       self.pr / 2, self.Ly + self.radii_padding, self.Lx)
         # rgb(150,50,150)
@@ -1894,7 +1963,7 @@ class MainW(QMainWindow):
                     self.cellpix = self.cellpix_orig.copy()
                     self.outpix = self.outpix_orig.copy()
 
-        #print(self.cellpix.shape, self.outpix.shape, self.cellpix.max(), self.outpix.max())
+        # print(self.cellpix.shape, self.outpix.shape, self.cellpix.max(), self.outpix.max())
         self.layerz = np.zeros((self.Ly, self.Lx, 4), np.uint8)
         if self.masksOn:
             self.layerz[..., :3] = self.cellcolors[self.cellpix[self.currentZ], :]
@@ -1909,8 +1978,8 @@ class MainW(QMainWindow):
             if len(inZ) > 0:
                 for i in inZ:
                     stroke = np.array(self.strokes[i])
-                    self.layerz[stroke[:, 1], stroke[:,
-                                                     2]] = np.array([255, 0, 255, 100])
+                    self.layerz[stroke[:, 1], stroke[:, 2]
+                                ] = np.array([255, 0, 255, 100])
         else:
             self.layerz[..., 3] = 0
 
@@ -1937,7 +2006,8 @@ class MainW(QMainWindow):
                 if key != "percentile":
                     normalize_params[key] = normalize_default[key]
         normalize_params = {**normalize_default, **normalize_params}
-        percentile = self.check_percentile_params(normalize_params["percentile"])
+        percentile = self.check_percentile_params(
+            normalize_params["percentile"])
         out = self.check_filter_params(normalize_params["sharpen_radius"],
                                        normalize_params["smooth_radius"],
                                        normalize_params["tile_norm_blocksize"],
@@ -1962,7 +2032,14 @@ class MainW(QMainWindow):
         self.norm_edits[1].setText(str(percentile[1]))
         return percentile
 
-    def check_filter_params(self, sharpen, smooth, tile_norm, smooth3D, norm3D, invert):
+    def check_filter_params(
+            self,
+            sharpen,
+            smooth,
+            tile_norm,
+            smooth3D,
+            norm3D,
+            invert):
         tile_norm = 0 if tile_norm < 0 else tile_norm
         sharpen = 0 if sharpen < 0 else sharpen
         smooth = 0 if smooth < 0 else smooth
@@ -1997,8 +2074,8 @@ class MainW(QMainWindow):
             tile_norm = float(self.filt_edits[2].text())
             smooth3D = float(self.filt_edits[3].text())
             invert = self.invert_cb.isChecked()
-            out = self.check_filter_params(sharpen, smooth, tile_norm, smooth3D, norm3D,
-                                           invert)
+            out = self.check_filter_params(
+                sharpen, smooth, tile_norm, smooth3D, norm3D, invert)
             sharpen, smooth, tile_norm, smooth3D, norm3D, invert = out
             normalize_params["sharpen_radius"] = sharpen
             normalize_params["smooth_radius"] = smooth
@@ -2042,13 +2119,17 @@ class MainW(QMainWindow):
             )
             img_norm = self.stack.copy()
             if sharpen > 0 or smooth > 0:
-                img_norm = smooth_sharpen_img(self.stack, sharpen_radius=sharpen,
-                                              smooth_radius=smooth)
+                img_norm = smooth_sharpen_img(
+                    self.stack, sharpen_radius=sharpen, smooth_radius=smooth)
 
             if tile_norm > 0:
-                img_norm = normalize99_tile(img_norm, blocksize=tile_norm,
-                                            lower=percentile[0], upper=percentile[1],
-                                            smooth3D=smooth3D, norm3D=norm3D)
+                img_norm = normalize99_tile(
+                    img_norm,
+                    blocksize=tile_norm,
+                    lower=percentile[0],
+                    upper=percentile[1],
+                    smooth3D=smooth3D,
+                    norm3D=norm3D)
             # convert to 0->255
             img_norm_min = img_norm.min()
             img_norm_max = img_norm.max()
@@ -2082,11 +2163,15 @@ class MainW(QMainWindow):
                 else:
                     for z in range(self.NZ):
                         if self.NZ > 1:
-                            x01 = np.percentile(img_norm[z, :, :, c], percentile[0])
-                            x99 = np.percentile(img_norm[z, :, :, c], percentile[1])
+                            x01 = np.percentile(
+                                img_norm[z, :, :, c], percentile[0])
+                            x99 = np.percentile(
+                                img_norm[z, :, :, c], percentile[1])
                         else:
-                            x01 = np.percentile(img_norm[..., c], percentile[0])
-                            x99 = np.percentile(img_norm[..., c], percentile[1])
+                            x01 = np.percentile(
+                                img_norm[..., c], percentile[0])
+                            x99 = np.percentile(
+                                img_norm[..., c], percentile[1])
                         if invert:
                             x01i = 255. - x99
                             x99i = 255. - x01
@@ -2149,21 +2234,24 @@ class MainW(QMainWindow):
                 raise ValueError("need to specify model (use dropdown)")
 
         if model_name is None or not isinstance(model_name, str):
-            self.model = models.CellposeModel(gpu=self.useGPU.isChecked(),
-                                              pretrained_model=self.current_model_path)
+            self.model = models.CellposeModel(
+                gpu=self.useGPU.isChecked(),
+                pretrained_model=self.current_model_path)
         else:
             self.current_model = model_name
             if self.current_model == "cyto" or self.current_model == "nuclei":
-                self.current_model_path = models.model_path(self.current_model, 0)
+                self.current_model_path = models.model_path(
+                    self.current_model, 0)
             else:
                 self.current_model_path = os.fspath(
                     models.MODEL_DIR.joinpath(self.current_model))
 
             if self.current_model != "cyto3":
                 diam_mean = 17. if self.current_model == "nuclei" else 30.
-                self.model = models.CellposeModel(gpu=self.useGPU.isChecked(),
-                                                  diam_mean=diam_mean,
-                                                  model_type=self.current_model)
+                self.model = models.CellposeModel(
+                    gpu=self.useGPU.isChecked(),
+                    diam_mean=diam_mean,
+                    model_type=self.current_model)
             else:
                 self.model = models.Cellpose(gpu=self.useGPU.isChecked(),
                                              model_type=self.current_model)
@@ -2190,7 +2278,9 @@ class MainW(QMainWindow):
         if train:
             self.logger.info(
                 f"training with {[os.path.split(f)[1] for f in self.train_files]}")
-            self.train_model(restore=restore, normalize_params=normalize_params)
+            self.train_model(
+                restore=restore,
+                normalize_params=normalize_params)
         else:
             print("GUI_INFO: training cancelled")
 
@@ -2200,23 +2290,26 @@ class MainW(QMainWindow):
             normalize_params = copy.deepcopy(normalize_default)
         if self.training_params["model_index"] < len(models.MODEL_NAMES):
             model_type = models.MODEL_NAMES[self.training_params["model_index"]]
-            self.logger.info(f"training new model starting at model {model_type}")
+            self.logger.info(
+                f"training new model starting at model {model_type}")
         else:
             model_type = None
             self.logger.info(f"training new model starting from scratch")
         self.current_model = model_type
         self.channels = self.training_params["channels"]
-        
+
         self.logger.info(
-            f"training with chan = {self.ChannelChoose[0].currentText()}, chan2 = {self.ChannelChoose[1].currentText()}"
-        )
+            f"training with chan = {
+                self.ChannelChoose[0].currentText()}, chan2 = {
+                self.ChannelChoose[1].currentText()}")
 
         self.model = models.CellposeModel(gpu=self.useGPU.isChecked(),
                                           model_type=model_type)
         self.SizeButton.setEnabled(False)
         save_path = os.path.dirname(self.filename)
 
-        print("GUI_INFO: name of new model: " + self.training_params["model_name"])
+        print("GUI_INFO: name of new model: " +
+              self.training_params["model_name"])
         print(f"GUI_INFO: SGD activated: {self.training_params['SGD']}")
         self.new_model_path, train_losses = train.train_seg(
             self.model.net, train_data=self.train_data, train_labels=self.train_labels,
@@ -2231,7 +2324,7 @@ class MainW(QMainWindow):
         np.save(str(self.new_model_path) + "_train_losses.npy", train_losses)
         # run model on next image
         io._add_model(self, self.new_model_path)
-        diam_labels = self.model.net.diam_labels.item()  #.copy()
+        diam_labels = self.model.net.diam_labels.item()  # .copy()
         self.new_model_ind = len(self.model_strings)
         self.autorun = True
         channels = self.channels.copy()
@@ -2241,15 +2334,18 @@ class MainW(QMainWindow):
         self.ChannelChoose[1].setCurrentIndex(channels[1])
         self.diameter = diam_labels
         self.Diameter.setText("%0.2f" % self.diameter)
-        self.logger.info(f">>>> diameter set to diam_labels ( = {diam_labels: 0.3f} )")
+        self.logger.info(
+            f">>>> diameter set to diam_labels ( = {
+                diam_labels: 0.3f} )")
         self.restore = restore
         self.set_normalize_params(normalize_params)
         self.get_next_image(load_seg=False)
 
         self.compute_segmentation(custom=True)
         self.logger.info(
-            f"!!! computed masks for {os.path.split(self.filename)[1]} from new model !!!"
-        )
+            f"!!! computed masks for {
+                os.path.split(
+                    self.filename)[1]} from new model !!!")
 
     def compute_restore(self):
         if self.restore:
@@ -2265,7 +2361,7 @@ class MainW(QMainWindow):
                         self.DenoiseChoose.setCurrentIndex(1)
                 if "upsample" in self.restore:
                     i = self.DenoiseChoose.currentIndex()
-                    diam_up = 30. if i==0 or i==1 else 17.
+                    diam_up = 30. if i == 0 or i == 1 else 17.
                     print(diam_up, self.ratio)
                     self.Diameter.setText(str(diam_up / self.ratio))
                 self.compute_denoise_model(model_type=model_type)
@@ -2322,8 +2418,8 @@ class MainW(QMainWindow):
             model_name = model_type + "_" + nstr
             print(model_name)
             # denoising model
-            self.denoise_model = denoise.DenoiseModel(gpu=self.useGPU.isChecked(),
-                                                      model_type=model_name)
+            self.denoise_model = denoise.DenoiseModel(
+                gpu=self.useGPU.isChecked(), model_type=model_name)
             self.progress.setValue(10)
             diam_up = 30. if "cyto" in model_name else 17.
 
@@ -2342,8 +2438,7 @@ class MainW(QMainWindow):
                 # get upsampling factor
                 if self.diameter >= diam_up:
                     print(
-                        f"GUI_ERROR: cannot upsample, already set to pixel diameter >= {diam_up}"
-                    )
+                        f"GUI_ERROR: cannot upsample, already set to pixel diameter >= {diam_up}")
                     self.progress.setValue(0)
                     return
                 self.ratio = diam_up / self.diameter
@@ -2351,23 +2446,27 @@ class MainW(QMainWindow):
                     "GUI_WARNING: upsampling image, this will also duplicate mask layer and resize it, will use more RAM"
                 )
                 print(
-                    f"GUI_INFO: upsampling image to {diam_up} pixel diameter ({self.ratio:0.2f} times)"
-                )
+                    f"GUI_INFO: upsampling image to {diam_up} pixel diameter ({
+                        self.ratio:0.2f} times)")
                 self.Lyr, self.Lxr = int(self.Ly * self.ratio), int(self.Lx *
                                                                     self.ratio)
                 self.Ly0, self.Lx0 = self.Ly, self.Lx
                 # moved resize into eval
-                #data = resize_image(data, Ly=self.Lyr, Lx=self.Lxr)
-                #self.diameter = diam_up
-                #self.Diameter.setText(str(diam_up))
+                # data = resize_image(data, Ly=self.Lyr, Lx=self.Lxr)
+                # self.diameter = diam_up
+                # self.Diameter.setText(str(diam_up))
             else:
                 self.Lyr, self.Lxr = self.Ly, self.Lx
                 self.Ly0, self.Lx0 = self.Ly, self.Lx
                 diam_up = self.diameter
 
-            img_norm = self.denoise_model.eval(data, channels=channels, z_axis=0,
-                                               channel_axis=3, diameter=self.diameter,
-                                               normalize=normalize_params)
+            img_norm = self.denoise_model.eval(
+                data,
+                channels=channels,
+                z_axis=0,
+                channel_axis=3,
+                diameter=self.diameter,
+                normalize=normalize_params)
             print(img_norm.shape)
             self.diameter = diam_up
             self.Diameter.setText(str(diam_up))
@@ -2385,15 +2484,18 @@ class MainW(QMainWindow):
             percentile = normalize_params["percentile"]
             img_norm_min = img_norm.min()
             img_norm_max = img_norm.max()
-            chan = [0] if channels[0] == 0 else [channels[0] - 1, channels[1] - 1]
+            chan = [0] if channels[0] == 0 else [
+                channels[0] - 1, channels[1] - 1]
             self.saturation = [[], [], []]
             for c in range(img_norm.shape[-1]):
                 if np.ptp(img_norm[..., c]) > 1e-3:
                     img_norm[..., c] -= img_norm_min
                     img_norm[..., c] /= (img_norm_max - img_norm_min)
                 for z in range(self.NZ):
-                    x01 = np.percentile(img_norm[z, :, :, c], percentile[0]) * 255.
-                    x99 = np.percentile(img_norm[z, :, :, c], percentile[1]) * 255.
+                    x01 = np.percentile(
+                        img_norm[z, :, :, c], percentile[0]) * 255.
+                    x99 = np.percentile(
+                        img_norm[z, :, :, c], percentile[1]) * 255.
                     self.saturation[chan[c]].append([x01, x99])
             notchan = np.ones(3, "bool")
             notchan[np.array(chan)] = False
@@ -2419,7 +2521,8 @@ class MainW(QMainWindow):
                 self.cellpix_resize = cv2.resize(
                     self.cellpix_orig[0], (self.Lxr, self.Lyr),
                     interpolation=cv2.INTER_NEAREST)[np.newaxis, :, :]
-                outlines = masks_to_outlines(self.cellpix_resize[0])[np.newaxis, :, :]
+                outlines = masks_to_outlines(self.cellpix_resize[0])[
+                    np.newaxis, :, :]
                 self.outpix_resize = outlines * self.cellpix_resize
 
             self.restore = model_name
@@ -2445,7 +2548,11 @@ class MainW(QMainWindow):
         except Exception as e:
             print("ERROR: %s" % e)
 
-    def compute_segmentation(self, custom=False, model_name=None, load_model=True):
+    def compute_segmentation(
+            self,
+            custom=False,
+            model_name=None,
+            load_model=True):
         self.progress.setValue(0)
         try:
             tic = time.time()
@@ -2455,8 +2562,10 @@ class MainW(QMainWindow):
                 self.initialize_model(model_name=model_name, custom=custom)
             self.progress.setValue(10)
             do_3D = self.load_3D
-            stitch_threshold = float(self.stitch_threshold.text()) if not isinstance(
-                self.stitch_threshold, float) else self.stitch_threshold
+            stitch_threshold = float(
+                self.stitch_threshold.text()) if not isinstance(
+                self.stitch_threshold,
+                float) else self.stitch_threshold
             anisotropy = float(self.anisotropy.text()) if not isinstance(
                 self.anisotropy, float) else self.anisotropy
             flow3D_smooth = float(self.flow3D_smooth.text()) if not isinstance(
@@ -2465,7 +2574,7 @@ class MainW(QMainWindow):
                 self.min_size, int) else self.min_size
             resample = self.resample.isChecked() if not isinstance(
                 self.resample, bool) else self.resample
-            
+
             do_3D = False if stitch_threshold > 0. else do_3D
 
             channels = self.get_channels()
@@ -2502,9 +2611,13 @@ class MainW(QMainWindow):
                               255).astype("uint8"))  # cellprob
             if self.load_3D:
                 if stitch_threshold == 0.:
-                    flows_new.append((flows[1][0] / 10 * 127 + 127).astype("uint8"))
+                    flows_new.append(
+                        (flows[1][0] / 10 * 127 + 127).astype("uint8"))
                 else:
-                    flows_new.append(np.zeros(flows[1][0].shape, dtype="uint8"))
+                    flows_new.append(
+                        np.zeros(
+                            flows[1][0].shape,
+                            dtype="uint8"))
 
             if not self.load_3D:
                 if self.restore and "upsample" in self.restore:
@@ -2515,7 +2628,7 @@ class MainW(QMainWindow):
                     for j in range(len(flows_new)):
                         self.flows.append(
                             resize_image(flows_new[j], Ly=self.Ly, Lx=self.Lx,
-                                        interpolation=cv2.INTER_NEAREST))
+                                         interpolation=cv2.INTER_NEAREST))
                 else:
                     self.flows = flows_new
             else:
@@ -2527,14 +2640,25 @@ class MainW(QMainWindow):
                     for j in range(len(flows_new)):
                         flow0 = flows_new[j]
                         if Ly0 != Ly:
-                            flow0 = resize_image(flow0, Ly=Ly, Lx=Lx,
-                                                no_channels=flow0.ndim==3, 
-                                                interpolation=cv2.INTER_NEAREST)
+                            flow0 = resize_image(
+                                flow0,
+                                Ly=Ly,
+                                Lx=Lx,
+                                no_channels=flow0.ndim == 3,
+                                interpolation=cv2.INTER_NEAREST)
                         if Lz0 != Lz:
-                            flow0 = np.swapaxes(resize_image(np.swapaxes(flow0, 0, 1),
-                                                Ly=Lz, Lx=Lx,
-                                                no_channels=flow0.ndim==3, 
-                                                interpolation=cv2.INTER_NEAREST), 0, 1)
+                            flow0 = np.swapaxes(
+                                resize_image(
+                                    np.swapaxes(
+                                        flow0,
+                                        0,
+                                        1),
+                                    Ly=Lz,
+                                    Lx=Lx,
+                                    no_channels=flow0.ndim == 3,
+                                    interpolation=cv2.INTER_NEAREST),
+                                0,
+                                1)
                         self.flows.append(flow0)
                 else:
                     self.flows = flows_new
@@ -2542,9 +2666,8 @@ class MainW(QMainWindow):
             # add first axis
             if self.NZ == 1:
                 masks = masks[np.newaxis, ...]
-                self.flows = [
-                    self.flows[n][np.newaxis, ...] for n in range(len(self.flows))
-                ]
+                self.flows = [self.flows[n][np.newaxis, ...]
+                              for n in range(len(self.flows))]
 
             self.logger.info("%d cells found with model in %0.3f sec" %
                              (len(np.unique(masks)[1:]), time.time() - tic))

@@ -2,7 +2,11 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import sys, os, glob, pathlib, time
+import sys
+import os
+import glob
+import pathlib
+import time
 import numpy as np
 from natsort import natsorted
 from tqdm import tqdm
@@ -20,7 +24,7 @@ def main(attached_model_interface):
     """
 
     main_window = gui.run(attached_model_interface)
-    return main_window 
+    return main_window
 
     """
     else:
@@ -74,10 +78,10 @@ def main(attached_model_interface):
 
         if args.norm_percentile is not None:
             value1, value2 = args.norm_percentile
-            normalize = {'percentile': (float(value1), float(value2))} 
+            normalize = {'percentile': (float(value1), float(value2))}
         else:
             normalize = (not args.no_norm)
-        
+
 
         model_type = None
         if pretrained_model and not os.path.exists(pretrained_model):
@@ -209,12 +213,12 @@ def main(attached_model_interface):
                                           ratio=1.)
                 if saving_something:
                     suffix = "_cp_masks"
-                    if args.output_name is not None: 
+                    if args.output_name is not None:
                         # (1) If `savedir` is not defined, then must have a non-zero `suffix`
                         if args.savedir is None and len(args.output_name) > 0:
                             suffix = args.output_name
                         elif args.savedir is not None and not os.path.samefile(args.savedir, args.dir):
-                            # (2) If `savedir` is defined, and different from `dir` then                              
+                            # (2) If `savedir` is defined, and different from `dir` then
                             # takes the value passed as a param. (which can be empty string)
                             suffix = args.output_name
 
@@ -339,6 +343,7 @@ def main(attached_model_interface):
                             "diams_style": diams_style
                         })
     """
+
 
 if __name__ == "__main__":
     main()

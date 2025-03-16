@@ -115,7 +115,8 @@ class ImageFilterWidget(QWidget):
         self.workflow = WorkflowWidget(viewer, self)
         layout.addWidget(self.workflow)
 
-        # Initialize the cellpose interface, which is used to fine tune the model which is the final stage in their custom pipeline
+        # Initialize the cellpose interface, which is used to fine tune the
+        # model which is the final stage in their custom pipeline
         self.model_interf = ModelInterface(viewer, self)
         layout.addWidget(self.model_interf)
 
@@ -288,7 +289,7 @@ class ImageFilterWidget(QWidget):
             import traceback
             traceback.print_exc()
 
-    def add_to_chat(self, log : str):
+    def add_to_chat(self, log: str):
         self.chat_widget.add_to_chat(log)
 
     def _apply_saturation(self):
