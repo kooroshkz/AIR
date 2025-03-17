@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QPushButton, QDialog
 )
 
-
 class ImageFiltersUI(QDialog):
     def __init__(self, filter_buttons: List[Tuple[str, Callable]]):
         super().__init__()
@@ -21,8 +20,18 @@ class ImageFiltersUI(QDialog):
         for name, method in filter_buttons:
             btn = QPushButton(name)
             btn.setStyleSheet(
-                "background-color: #4A90E2; color: black; font-size: 16px; padding: 5px;"
-            )
+                """
+                    QPushButton {
+                        background-color: #3A3B3C;
+                        color: white;
+                        padding: 10px;
+                        border: 2px white;
+                        border-radius: 5px;
+                    }
+                    QPushButton:hover {
+                        border: 2px black;
+                    }
+                """)
             btn.clicked.connect(method)
             layout.addWidget(btn)
 

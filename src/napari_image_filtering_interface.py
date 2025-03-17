@@ -16,13 +16,12 @@ from .napari_image_filters import (
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
     apply_sharpening, apply_ridge_detection, otsu_thresholding,
-    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei,
-    split_channels
+    otsu_thresholding_no_mask, split_channels
 )
 
 from .chat_interface import ChatWidget
-from .workflows import WorkflowWidget
-from .final_model_interface import ModelInterface
+from .pipelines import WorkflowWidget
+from .cellpose_launch import CellposeLaunchPoint
 from .napari_image_filters_ui import ImageFiltersUI
 
 
@@ -92,10 +91,8 @@ class ImageFilterWidget(QWidget):
             ("Adaptive Threshold", self._apply_adaptive_threshold),
             ("Sharpen", self._apply_sharpening),
             ("Ridge Detection", self._apply_ridge_detection),
-            ("Cell segmentation (BETA)", self._apply_otsu_thresholding),
-            ("Cell segmentation 2 (BETA)", self._apply_otsu_thresholding_no_mask),
-            ("cytoplasm segmentation (BETA)", self._apply_cellpose_cyto),
-            ("nucleus segmentation (BETA)", self._apply_cellpose_nucleus),
+            ("Otsu thresholding", self._apply_otsu_thresholding),
+            ("Otsu thresholding (no mask)", self._apply_otsu_thresholding_no_mask),
         ]
 
         # for name, method in self.filter_buttons:
@@ -117,7 +114,7 @@ class ImageFilterWidget(QWidget):
 
         # Initialize the cellpose interface, which is used to fine tune the
         # model which is the final stage in their custom pipeline
-        self.model_interf = ModelInterface(viewer, self)
+        self.model_interf = CellposeLaunchPoint(viewer, self)
         layout.addWidget(self.model_interf)
 
         self.setLayout(layout)
@@ -340,12 +337,6 @@ class ImageFilterWidget(QWidget):
 
     def _apply_otsu_thresholding_no_mask(self):
         self._apply_filter(otsu_thresholding_no_mask)
-
-    def _apply_cellpose_cyto(self):
-        self._apply_filter(cellpose_cyto)
-
-    def _apply_cellpose_nucleus(self):
-        self._apply_filter(cellpose_nuclei)
 
     def _split_channels(self):
         self._apply_filter(split_channels)

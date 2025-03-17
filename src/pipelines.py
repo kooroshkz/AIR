@@ -14,38 +14,38 @@ from qtpy.QtWidgets import (
 # pipeline class so that the name can stay coupled to the original
 # pipeline system without needing a rewrite
 
-from .global_model_state import GlobalModelState
 from .utils import DropdownPopup
 
-
 class Pipeline():
+    #Pipeline() assumes that all functions which it stores take as input a Nxnxmx3 or Nxnxm numpy image array
+    #N -> any number of images, so you should be able to pass 10 images, and as long as theyre nxm it will output that many images too
     def __init__(self) -> None:
-        #the preprocessing pipeline (basically anything before cellpose)
-        self.workflow: Dict[int, Callable] = {}
-        self.final_stage: GlobalModelState | None = None
+        self.pipeline: List[Callable] = []
         self.name: str = ""
 
+    def add_func(self, func : Callable):
+        self.pipeline.append(func)
+
     def __len__(self):
-        return len(self.workflow)
+        return len(self.pipeline)
 
-    def __getitem__(self, key):
-        return self.workflow[key]
-
-    def __setitem__(self, key, value):
-        self.workflow[key] = value
-
-    def __delitem__(self, key):
-        del self.workflow[key]
-
-    def __contains__(self, key):
-        return key in self.workflow
+    def __getitem__(self, idx):
+        return self.pipeline[idx]
 
     def __iter__(self):
-        return iter(self.workflow)
+        return iter(self.pipeline)
+
+    def __contains__(self, func : Callable):
+        return func in self.pipeline
 
     def __repr__(self):
-        return f"{self.name}"
+        return f"pipeline {self.name=}, {self.pipeline=}"
 
+    def __delitem__(self, name : str):
+        for idx, func in enumerate(self):
+            if func.__name__ == name:
+                self.pipeline.pop(idx)
+                break #dont delete all the items with the same name
 
 class WorkflowWidget(QWidget):
     """
@@ -70,12 +70,9 @@ class WorkflowWidget(QWidget):
         self.setup_ui()
         self.recording = False
 
-        # the recorded workflow, all actions get recorded here
-        # stored as dict for automatic index management when removing or adding
-        # items to the workflow
         self.wf_idx = 0
         self.current_workflow: Pipeline = Pipeline()
-        self.workflows: Dict[int, Pipeline] = {}
+        self.workflows: Dict[str, Pipeline] = {} 
 
     def setup_ui(self):
         """Configure the widget's user interface."""
@@ -176,19 +173,18 @@ class WorkflowWidget(QWidget):
             return
 
         if self.current_workflow.name == "":
-            self.current_workflow.name = f"workflow {len(self.workflows)}"
+            self.current_workflow.name = f"unnamed workflow"
 
-        self.workflows[len(self.workflows)] = self.current_workflow
-        wf_index = len(self.workflows) - 1
+        self.workflows[self.current_workflow.name] = self.current_workflow
 
         wf_area = QHBoxLayout()
         wf_button = QPushButton(self.current_workflow.name)
         wf_delete_button = QPushButton("delete")
         wf_export_button = QPushButton("export to file")
 
-        wf_button.clicked.connect(partial(self.apply_wf, wf_index))
+        wf_button.clicked.connect(partial(self.apply_wf, self.current_workflow.name))
         wf_delete_button.clicked.connect(partial(self.remove_wf, wf_area))
-        wf_export_button.clicked.connect(partial(self.export_wf, wf_index))
+        wf_export_button.clicked.connect(partial(self.export_wf, self.current_workflow.name))
 
         wf_area.addWidget(wf_button)
         wf_area.addWidget(wf_delete_button)
@@ -198,10 +194,10 @@ class WorkflowWidget(QWidget):
         self.recording = False
         self.reset()
 
-    def export_wf(self, wf_index):
+    def export_wf(self, wf_name : str):
         # code should never reach this point, but for smoother error recovery
         # we need this check
-        if wf_index not in self.workflows:
+        if wf_name not in self.workflows:
             self.filter_widget.add_to_chat(
                 "workflow does not exist")
             return
@@ -210,7 +206,7 @@ class WorkflowWidget(QWidget):
         if not file_path:
             return
 
-        wf = self.workflows[wf_index]
+        wf = self.workflows[wf_name]
 
         with open(file_path, 'wb') as fp:
             pickle.dump(wf, fp)
@@ -254,35 +250,35 @@ class WorkflowWidget(QWidget):
 
     def add_event_to_workflow(self, event: Callable):
         if self.recording:
-            self.current_workflow[len(self.current_workflow)] = event
-            lb = QPushButton(f"event {len(self)}: {event.__name__}")
+            self.current_workflow.add_func(event)
+            lb = QPushButton(f"{event.__name__}")
             lb.setStyleSheet(
                 """
-            QPushButton {
-                background-color: #0366d6;
-                color: white;
-                border: none;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #FF0000;
-            }
-            """
-            )
-            lb.clicked.connect(
-                partial(
-                    self.remove_event_wf, len(
-                        self.current_workflow) - 1, lb))
+                    QPushButton {
+                        background-color: #3A3B3C;
+                        color: white;
+                        border: 2px solid white;
+                        border-radius: 5px;
+                    }
+                    QPushButton:hover {
+                        border: 2px solid red;
+                    }
+                """)
+            lb.setToolTip("Press on pipeline event to delete from pipeline")
+
+            lb.clicked.connect(partial(self.remove_event_wf, event.__name__, lb))
+
             self.recording_wf_layout.addWidget(lb)
 
-    def remove_event_wf(self, pos: int, widget: QPushButton):
+    def remove_event_wf(self, event_name: str, widget: QPushButton):
         # code should never reach this point, but for smoother error handling
         # its included
         if len(self.current_workflow) == 0:
             self.filter_widget.add_to_chat(
                 "cannot remove event from empty pipeline")
             return
-        del self.current_workflow[pos]
+
+        del self.current_workflow[event_name]
         self.recording_wf_layout.removeWidget(widget)
         widget.setParent(None)
         widget.deleteLater()
@@ -301,10 +297,15 @@ class WorkflowWidget(QWidget):
             return False
         return True
 
-    def apply_wf(self, wf_index: int):
-        wf = self.workflows[wf_index]
-        for filter_event in wf:
-            self.filter_widget._apply_filter(wf[filter_event])
+    def apply_wf(self, wf_name : str):
+        #should never happen, but just for smoother error handling in all cases
+        try:
+            wf = self.workflows[wf_name]
+            for filter_event in wf:
+                self.filter_widget._apply_filter(filter_event)
+
+        except KeyError:
+            self.filter_widget.add_to_chat(f"[Error] workflow {wf_name} does not exist")
 
     def reset(self):
         """resets the current workflow pipeline"""

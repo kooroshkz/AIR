@@ -18,8 +18,6 @@ from PIL import Image, ImageEnhance, ImageFilter
 import cv2
 from skimage.feature import local_binary_pattern
 from scipy.ndimage import gaussian_filter
-from cellpose import models
-from .cellpose_utils import masks_to_segmentation
 
 # global storage of all available functions
 IMG_FUNCTIONS: List[Callable] = []
@@ -464,22 +462,6 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
     return gray_img
 
 
-def cellpose_cyto(image: np.ndarray) -> np.ndarray:
-    model = models.Cellpose(model_type='cyto')
-    channels = [0, 0]
-    masks, flows, styles, diams = model.eval(image, channels=channels)
-
-    return masks_to_segmentation(masks)
-
-
-def cellpose_nuclei(image: np.ndarray) -> np.ndarray:
-    model = models.Cellpose(model_type='nuclei')
-    channels = [1, 0]
-    masks, flows, styles, diams = model.eval(image, channels=channels)
-
-    return masks_to_segmentation(masks)
-
-
 def split_channels(
         img: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert len(img.shape) == 3
@@ -505,6 +487,5 @@ IMG_FUNCTIONS.extend([
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
     apply_sharpening, apply_ridge_detection, otsu_thresholding,
-    otsu_thresholding_no_mask, cellpose_cyto, cellpose_nuclei,
-    split_channels
+    otsu_thresholding_no_mask, split_channels
 ])
