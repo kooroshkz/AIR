@@ -20,6 +20,7 @@ from .utils import DropdownPopup
 
 class Pipeline():
     def __init__(self) -> None:
+        #the preprocessing pipeline (basically anything before cellpose)
         self.workflow: Dict[int, Callable] = {}
         self.final_stage: GlobalModelState | None = None
         self.name: str = ""

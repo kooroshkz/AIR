@@ -1,5 +1,6 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Modified by Luis Valero
 """
 
 import sys
