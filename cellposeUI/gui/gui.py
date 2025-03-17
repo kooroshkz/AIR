@@ -204,6 +204,7 @@ class MainW(QMainWindow):
                 ModelInterface.preprocessing_pipeline}")
 
         pg.setConfigOptions(imageAxisOrder="row-major")
+        self.load_3D = False
 
         self.setGeometry(50, 50, 1200, 1000)
         self.setWindowTitle(f"cellpose v{version}")

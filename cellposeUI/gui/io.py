@@ -155,23 +155,6 @@ def _load_image(parent, filename=None, load_seg=True, load_3D=False):
         if load_mask:
             _load_masks(parent, filename=mask_file)
 
-
-def _load_image_napari_layer(parent, image_vals: np.ndarray, filename: str):
-    print(f"GUI_INFO: loading image: {filename}")
-    print(f"DEBUG: {image_vals.shape}")
-    parent.loaded = True
-    parent.reset()
-    print(f"called reset")
-    parent.filename = filename
-    # filename = os.path.split(parent.filename)[-1] #maybe this isnt needed,
-    # no clue why its added
-    print("initializing images")
-    _initialize_images(parent, image_vals, load_3D=False)
-    print("enabling buttons")
-    parent.loaded = True  # check deleting this and see what it does
-    parent.enable_buttons()
-
-
 def _initialize_images(parent, image, load_3D=False):
     """ format image for GUI
 
