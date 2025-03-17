@@ -1,3 +1,9 @@
+### This is a modified fork of CellPose
+The code in this directory is a modified version of cellpose with added features for interacting with pipelines
+
+
+
+# The readme for the original cellpose project is below
 # <p>  <b>Cellpose </b> </p>
 <img src="http://www.cellpose.org/static/images/logo.png?raw=True" width="250" title="cellpose" alt="cellpose" align="right" vspace = "50">
 
