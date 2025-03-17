@@ -11,7 +11,6 @@ from src.workflows import Pipeline
 
 from cellposeUI.__main__ import main
 
-
 class ModelInterface(QWidget):
     """
     Widget for launching & interacting with the cellpose UI, which is used to finetune the final model for the pipeline
@@ -30,7 +29,8 @@ class ModelInterface(QWidget):
         self.setup_ui()
 
         # the QMainWindow object representing the Cellpose UI
-        self.main_window = main(self)
+        # this object has not yet been initialized
+        self.main_window, self.cellpose_logger = main(self)
         self.is_rendered = False
 
     def setup_ui(self):
@@ -60,14 +60,12 @@ class ModelInterface(QWidget):
         # get the pipeline which final model will be attached to (if a pipeline
         # is selected)
         ModelInterface.preprocessing_pipeline = self.filter_widget.workflow.get_pipelines()
-        print("-------------------------------------------------")
-        print(ModelInterface.preprocessing_pipeline)
 
         # 3 options, user just closed it, user picked to launch with no
         # pipeline, or user selected pipeline
         if ModelInterface.preprocessing_pipeline is None:
             return
-        elif ModelInterface.preprocessing_pipeline.name == "no pipeline":
+        elif ModelInterface.preprocessing_pipeline.name == "":
             self.filter_widget.add_to_chat(
                 f"[Info] launching cellpose with no pipeline attached")
             ModelInterface.pipeline_attached = False
@@ -75,19 +73,27 @@ class ModelInterface(QWidget):
         else:
             self.filter_widget.add_to_chat(
                 f"[Info] launching cellpose with pipeline {
-                    ModelInterface.preprocessing_pipeline.name}")
+                    ModelInterface.preprocessing_pipeline}")
             ModelInterface.pipeline_attached = True
             ModelInterface.preprocessing_pipeline.final_stage = GlobalModelState()
 
         # launches cellpose with the currently selected napari layer
         try:
-            self.filter_widget.chat_widget.add_to_chat(
-                "[Status] Launching cellpose")
-
-            self.main_window.call_init()
+            self.main_window.__init__(None, self.cellpose_logger)
             self.is_rendered = True
-
+        #when cellpose launches with no image as it does in this case it raises a NameError
+        except NameError as ne:
+            pass 
         except Exception as e:
             self.filter_widget.chat_widget.add_to_chat(
                 "[Error] Could not launch cellpose UI")
-            self.filter_widget.chat_widget.add_to_chat(f"[Message] {e}")
+            self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
+
+def set_MIPipeline_attr(name : str, val : any):
+    try:
+        from src.final_model_interface import ModelInterface
+        if ModelInterface.preprocessing_pipeline is not None:
+                ModelInterface.preprocessing_pipeline.final_stage.set_attr(name, val)
+        return None
+    except Exception as e:
+        print(f"[Error] {e}")

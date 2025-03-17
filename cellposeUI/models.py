@@ -148,6 +148,9 @@ class Cellpose():
 
     def __init__(self, gpu=False, model_type="cyto3", nchan=2, device=None,
                  backbone="default"):
+
+        from src.final_model_interface import set_MIPipeline_attr
+
         super(Cellpose, self).__init__()
 
         # assign device (GPU or CPU)
@@ -155,19 +158,26 @@ class Cellpose():
         self.device = device if device is not None else sdevice
         self.gpu = gpu
         self.backbone = backbone
+        set_MIPipeline_attr("device", self.device)
+        set_MIPipeline_attr("gpu", self.gpu)
+        set_MIPipeline_attr("backbone", self.backbone)
 
         model_type = "cyto3" if model_type is None else model_type
+        set_MIPipeline_attr("model_type", model_type)
 
         self.diam_mean = 30.  # default for any cyto model
         nuclear = "nuclei" in model_type
         if nuclear:
             self.diam_mean = 17.
 
+        set_MIPipeline_attr("diam_mean", self.diam_mean)
+
         if model_type in ["cyto", "nuclei", "cyto2", "cyto3"] and nchan != 2:
             nchan = 2
             models_logger.warning(
                 f"cannot set nchan to other value for {model_type} model")
         self.nchan = nchan
+        set_MIPipeline_attr("nchan", self.nchan)
 
         self.cp = CellposeModel(
             device=self.device,
@@ -177,6 +187,7 @@ class Cellpose():
             nchan=self.nchan,
             backbone=self.backbone)
         self.cp.model_type = model_type
+        set_MIPipeline_attr("cp", self.cp)
 
         # size model not used for bacterial model
         self.pretrained_size = size_model_path(model_type)
@@ -185,6 +196,7 @@ class Cellpose():
             pretrained_size=self.pretrained_size,
             cp_model=self.cp)
         self.sz.model_type = model_type
+        set_MIPipeline_attr("sz", self.sz)
 
     def eval(
             self,
@@ -423,6 +435,8 @@ class CellposeModel():
             models_logger.info(
                 f">>>> model diam_mean = {
                     self.diam_mean: .3f} (ROIs rescaled to this size during training)")
+            from src.final_model_interface import set_MIPipeline_attr
+            set_MIPipeline_attr("diam_mean", self.diam_mean)
             if not builtin:
                 models_logger.info(
                     f">>>> model diam_labels = {

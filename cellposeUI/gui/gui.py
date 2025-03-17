@@ -20,6 +20,7 @@ from scipy.stats import mode
 import cv2
 
 
+
 from . import guiparts, menus, io
 from .. import models, core, dynamics, version, denoise, train
 from ..utils import download_url_to_file, masks_to_outlines, diameters
@@ -155,39 +156,9 @@ def run(image=None):
     from ..io import logger_setup
     logger, _ = logger_setup()
 
-    # Always start by initializing Qt (only once per application)
-    # warnings.filterwarnings("ignore")
-    # app = QApplication(sys.argv)
-
-    # icon_path = pathlib.Path.home().joinpath(".cellpose", "logo.png")
-    # guip_path = pathlib.Path.home().joinpath(".cellpose", "cellpose_gui.png")
-    # if not icon_path.is_file():
-    #     cp_dir = pathlib.Path.home().joinpath(".cellpose")
-    #     cp_dir.mkdir(exist_ok=True)
-    #     print("downloading logo")
-    #     download_url_to_file(
-    #         "https://www.cellpose.org/static/images/cellpose_transparent.png",
-    #         icon_path, progress=True)
-    # if not guip_path.is_file():
-    #     print("downloading help window image")
-    #     download_url_to_file("https://www.cellpose.org/static/images/cellpose_gui.png",
-    #                          guip_path, progress=True)
-    # icon_path = str(icon_path.resolve())
-    # app_icon = QtGui.QIcon()
-    # app_icon.addFile(icon_path, QtCore.QSize(16, 16))
-    # app_icon.addFile(icon_path, QtCore.QSize(24, 24))
-    # app_icon.addFile(icon_path, QtCore.QSize(32, 32))
-    # app_icon.addFile(icon_path, QtCore.QSize(48, 48))
-    # app_icon.addFile(icon_path, QtCore.QSize(64, 64))
-    # app_icon.addFile(icon_path, QtCore.QSize(256, 256))
-    # app.setWindowIcon(app_icon)
-    # app.setStyle("Fusion")
-    # app.setPalette(guiparts.DarkPalette())
-    # app.setStyleSheet("QLineEdit { color: yellow }")
-
     # models.download_model_weights() # does not exist
-    main_window = MainW(image=image, logger=logger)
-    return main_window
+    main_window = MainW.__new__(MainW)
+    return main_window, logger
 
 
 class MainW(QMainWindow):
@@ -195,8 +166,6 @@ class MainW(QMainWindow):
     def __init__(self, image=None, logger=None):
         super(MainW, self).__init__()
         self.logger = logger
-
-    def call_init(self):
 
         from src.final_model_interface import ModelInterface
         print(
@@ -431,7 +400,7 @@ class MainW(QMainWindow):
         self.autobtn.setToolTip(
             "sets scale-bars as normalized for segmentation")
         self.autobtn.setFont(self.medfont)
-        self.autobtn.setChecked(True)
+        self.autobtn.setChecked(False)
         self.satBoxG.addWidget(self.autobtn, b0, 1, 1, 8)
 
         b0 += 1
@@ -1075,9 +1044,14 @@ class MainW(QMainWindow):
                 model_name = self.ModelChooseC.currentText()
             else:
                 model_name = self.net_names[index - 1]
+
             print(f"GUI_INFO: selected model {model_name}, loading now")
             self.initialize_model(model_name=model_name, custom=custom)
+
             self.diameter = self.model.diam_labels
+            from src.final_model_interface import set_MIPipeline_attr
+            set_MIPipeline_attr("diameter", self.diameter)
+
             self.Diameter.setText("%0.2f" % self.diameter)
             print(
                 f"GUI_INFO: diameter set to {
@@ -1922,6 +1896,10 @@ class MainW(QMainWindow):
 
     def compute_scale(self):
         self.diameter = float(self.Diameter.text())
+
+        from src.final_model_interface import set_MIPipeline_attr
+        set_MIPipeline_attr("diameter", self.diameter)
+
         self.pr = int(float(self.Diameter.text()))
         self.radii_padding = int(self.pr * 1.25)
         self.radii = np.zeros(
@@ -2230,6 +2208,7 @@ class MainW(QMainWindow):
         if model_name == "dataset-specific models":
             raise ValueError("need to specify model (use dropdown)")
         elif model_name is None or custom:
+            #set both self.current_model and self.current_model_path from just the path
             self.get_model_path(custom=custom)
             if not os.path.exists(self.current_model_path):
                 raise ValueError("need to specify model (use dropdown)")
@@ -2248,7 +2227,7 @@ class MainW(QMainWindow):
                     models.MODEL_DIR.joinpath(self.current_model))
 
             if self.current_model != "cyto3":
-                diam_mean = 17. if self.current_model == "nuclei" else 30.
+                diam_mean = 17. if self.current_model == "nuclei" else 30. #why?
                 self.model = models.CellposeModel(
                     gpu=self.useGPU.isChecked(),
                     diam_mean=diam_mean,
@@ -2256,6 +2235,11 @@ class MainW(QMainWindow):
             else:
                 self.model = models.Cellpose(gpu=self.useGPU.isChecked(),
                                              model_type=self.current_model)
+
+            from src.final_model_interface import set_MIPipeline_attr
+            set_MIPipeline_attr("current_model_path", self.current_model_path)
+            set_MIPipeline_attr("current_model", self.current_model)
+            set_MIPipeline_attr("model", self.model)
 
     def add_model(self):
         io._add_model(self)
@@ -2387,6 +2371,7 @@ class MainW(QMainWindow):
     def compute_cprob(self):
         if self.recompute_masks:
             flow_threshold, cellprob_threshold = self.get_thresholds()
+            from src.final_model_interface import set_MIPipeline_attr
             if flow_threshold is None:
                 self.logger.info(
                     "computing masks with cell prob=%0.3f, no flow error threshold" %
@@ -2556,6 +2541,7 @@ class MainW(QMainWindow):
             load_model=True):
         self.progress.setValue(0)
         try:
+            from src.final_model_interface import set_MIPipeline_attr
             tic = time.time()
             self.clear_all()
             self.flows = [[], [], []]
@@ -2563,10 +2549,7 @@ class MainW(QMainWindow):
                 self.initialize_model(model_name=model_name, custom=custom)
             self.progress.setValue(10)
             do_3D = self.load_3D
-            stitch_threshold = float(
-                self.stitch_threshold.text()) if not isinstance(
-                self.stitch_threshold,
-                float) else self.stitch_threshold
+            stitch_threshold = self.stitch_threshold.text() if not isinstance(self.stitch_threshold,float) else self.stitch_threshold
             anisotropy = float(self.anisotropy.text()) if not isinstance(
                 self.anisotropy, float) else self.anisotropy
             flow3D_smooth = float(self.flow3D_smooth.text()) if not isinstance(
@@ -2585,11 +2568,25 @@ class MainW(QMainWindow):
                 data = self.stack.copy().squeeze()
             flow_threshold, cellprob_threshold = self.get_thresholds()
             self.diameter = float(self.Diameter.text())
+
             niter = max(0, int(self.niter.text()))
             niter = None if niter == 0 else niter
             normalize_params = self.get_normalize_params()
             print(normalize_params)
             try:
+
+                set_MIPipeline_attr("diameter", self.diameter)
+                set_MIPipeline_attr("cellprob_threshold", cellprob_threshold)
+                set_MIPipeline_attr("flow_threshold", flow_threshold)
+                set_MIPipeline_attr("do_3D", do_3D)
+                set_MIPipeline_attr("niter", niter)
+                set_MIPipeline_attr("normalize_params", normalize_params)
+                set_MIPipeline_attr("stitch_threshold", stitch_threshold)
+                set_MIPipeline_attr("anisotropy", anisotropy)
+                set_MIPipeline_attr("resample", resample)
+                set_MIPipeline_attr("flow3D_smooth", flow3D_smooth)
+                set_MIPipeline_attr("min_size", min_size)
+
                 masks, flows = self.model.eval(
                     data, channels=channels, diameter=self.diameter,
                     cellprob_threshold=cellprob_threshold,
@@ -2602,7 +2599,6 @@ class MainW(QMainWindow):
                 print("NET ERROR: %s" % e)
                 self.progress.setValue(0)
                 return
-
             self.progress.setValue(75)
 
             # convert flows to uint8 and resize to original image size
@@ -2669,7 +2665,6 @@ class MainW(QMainWindow):
                 masks = masks[np.newaxis, ...]
                 self.flows = [self.flows[n][np.newaxis, ...]
                               for n in range(len(self.flows))]
-
             self.logger.info("%d cells found with model in %0.3f sec" %
                              (len(np.unique(masks)[1:]), time.time() - tic))
             self.progress.setValue(80)
