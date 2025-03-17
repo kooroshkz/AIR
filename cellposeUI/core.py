@@ -99,7 +99,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
             if torch.cuda.is_available():
                 device = torch.device(f'cuda:{device}')
                 core_logger.info(">>>> using GPU (CUDA)")
-                #FINDME
+                # FINDME
                 gpu = True
                 cpu = False
         except BaseException:

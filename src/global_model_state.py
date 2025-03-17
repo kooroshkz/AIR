@@ -9,9 +9,10 @@ class GlobalModelState:
         # useful when building a more intuitive ui for them
         self.__attributes: Dict[str, Any] = {}
 
-    def set_attr(self, name : str, val : Any):
-        #set a variable which doesent already have a setter
-        #risky because since keys are strings you may be setting a variable which was already set
+    def set_attr(self, name: str, val: Any):
+        # set a variable which doesent already have a setter
+        # risky because since keys are strings you may be setting a variable
+        # which was already set
         self.__attributes[name] = val
         print(f"\033[92;1m[LUIS]\033[0m {name} set to {val}")
         print(self.__attributes)

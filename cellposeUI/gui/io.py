@@ -155,6 +155,7 @@ def _load_image(parent, filename=None, load_seg=True, load_3D=False):
         if load_mask:
             _load_masks(parent, filename=mask_file)
 
+
 def _initialize_images(parent, image, load_3D=False):
     """ format image for GUI
 
@@ -705,7 +706,7 @@ def _save_sets(parent):
             "chan_choose": [
                 parent.ChannelChoose[0].currentIndex(),
                 parent.ChannelChoose[1].currentIndex()
-            ],
+                    ],
             "filename":
                 parent.filename,
             "flows":

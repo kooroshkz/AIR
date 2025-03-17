@@ -11,6 +11,7 @@ from src.workflows import Pipeline
 
 from cellposeUI.__main__ import main
 
+
 class ModelInterface(QWidget):
     """
     Widget for launching & interacting with the cellpose UI, which is used to finetune the final model for the pipeline
@@ -81,19 +82,22 @@ class ModelInterface(QWidget):
         try:
             self.main_window.__init__(None, self.cellpose_logger)
             self.is_rendered = True
-        #when cellpose launches with no image as it does in this case it raises a NameError
+        # when cellpose launches with no image as it does in this case it
+        # raises a NameError
         except NameError as ne:
-            pass 
+            pass
         except Exception as e:
             self.filter_widget.chat_widget.add_to_chat(
                 "[Error] Could not launch cellpose UI")
             self.filter_widget.chat_widget.add_to_chat(f"[Error] {e}")
 
-def set_MIPipeline_attr(name : str, val : any):
+
+def set_MIPipeline_attr(name: str, val: any):
     try:
         from src.final_model_interface import ModelInterface
         if ModelInterface.preprocessing_pipeline is not None:
-                ModelInterface.preprocessing_pipeline.final_stage.set_attr(name, val)
+            ModelInterface.preprocessing_pipeline.final_stage.set_attr(
+                name, val)
         return None
     except Exception as e:
         print(f"[Error] {e}")

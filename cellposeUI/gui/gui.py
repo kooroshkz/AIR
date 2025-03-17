@@ -20,7 +20,6 @@ from scipy.stats import mode
 import cv2
 
 
-
 from . import guiparts, menus, io
 from .. import models, core, dynamics, version, denoise, train
 from ..utils import download_url_to_file, masks_to_outlines, diameters
@@ -2208,7 +2207,8 @@ class MainW(QMainWindow):
         if model_name == "dataset-specific models":
             raise ValueError("need to specify model (use dropdown)")
         elif model_name is None or custom:
-            #set both self.current_model and self.current_model_path from just the path
+            # set both self.current_model and self.current_model_path from just
+            # the path
             self.get_model_path(custom=custom)
             if not os.path.exists(self.current_model_path):
                 raise ValueError("need to specify model (use dropdown)")
@@ -2227,7 +2227,7 @@ class MainW(QMainWindow):
                     models.MODEL_DIR.joinpath(self.current_model))
 
             if self.current_model != "cyto3":
-                diam_mean = 17. if self.current_model == "nuclei" else 30. #why?
+                diam_mean = 17. if self.current_model == "nuclei" else 30.  # why?
                 self.model = models.CellposeModel(
                     gpu=self.useGPU.isChecked(),
                     diam_mean=diam_mean,
@@ -2549,7 +2549,8 @@ class MainW(QMainWindow):
                 self.initialize_model(model_name=model_name, custom=custom)
             self.progress.setValue(10)
             do_3D = self.load_3D
-            stitch_threshold = self.stitch_threshold.text() if not isinstance(self.stitch_threshold,float) else self.stitch_threshold
+            stitch_threshold = self.stitch_threshold.text() if not isinstance(
+                self.stitch_threshold, float) else self.stitch_threshold
             anisotropy = float(self.anisotropy.text()) if not isinstance(
                 self.anisotropy, float) else self.anisotropy
             flow3D_smooth = float(self.flow3D_smooth.text()) if not isinstance(
