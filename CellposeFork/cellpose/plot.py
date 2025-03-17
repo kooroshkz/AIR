@@ -11,14 +11,14 @@ from . import utils, io, transforms
 try:
     import matplotlib
     MATPLOTLIB_ENABLED = True
-except:
+except BaseException:
     MATPLOTLIB_ENABLED = False
 
 try:
     from skimage import color
     from skimage.segmentation import find_boundaries
     SKIMAGE_ENABLED = True
-except:
+except BaseException:
     SKIMAGE_ENABLED = False
 
 
@@ -28,20 +28,23 @@ def dx_to_circ(dP):
 
     Args:
         dP (ndarray): Flow field components [dy, dx].
-        
+
     Returns:
         ndarray: The circular color representation of the optic flow.
 
     """
-    mag = 255 * np.clip(transforms.normalize99(np.sqrt(np.sum(dP**2, axis=0))), 0, 1.)
+    mag = 255 * \
+        np.clip(transforms.normalize99(np.sqrt(np.sum(dP**2, axis=0))), 0, 1.)
     angles = np.arctan2(dP[1], dP[0]) + np.pi
     a = 2
     mag /= a
     rgb = np.zeros((*dP.shape[1:], 3), "uint8")
     rgb[..., 0] = np.clip(mag * (np.cos(angles) + 1), 0, 255).astype("uint8")
-    rgb[..., 1] = np.clip(mag * (np.cos(angles + 2 * np.pi / 3) + 1), 0, 255).astype("uint8")
-    rgb[..., 2] = np.clip(mag * (np.cos(angles + 4 * np.pi / 3) + 1), 0, 255).astype("uint8")
-    
+    rgb[..., 1] = np.clip(
+        mag * (np.cos(angles + 2 * np.pi / 3) + 1), 0, 255).astype("uint8")
+    rgb[..., 2] = np.clip(
+        mag * (np.cos(angles + 4 * np.pi / 3) + 1), 0, 255).astype("uint8")
+
     return rgb
 
 
@@ -160,7 +163,8 @@ def mask_overlay(img, masks, colors=None):
 
     HSV = np.zeros((img.shape[0], img.shape[1], 3), np.float32)
     HSV[:, :, 2] = np.clip((img / 255. if img.max() > 1 else img) * 1.5, 0, 1)
-    hues = np.linspace(0, 1, masks.max() + 1)[np.random.permutation(masks.max())]
+    hues = np.linspace(0, 1, masks.max() +
+                       1)[np.random.permutation(masks.max())]
     for n in range(int(masks.max())):
         ipix = (masks == n + 1).nonzero()
         if colors is None:

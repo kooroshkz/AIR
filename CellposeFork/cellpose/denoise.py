@@ -2,7 +2,13 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import os, time, datetime
+from cellpose.models import CellposeModel, model_path, normalize_default, assign_device, check_mkl
+from cellpose.resnet_torch import CPnet
+from cellpose.core import run_net
+from cellpose import transforms, resnet_torch, utils, io
+import os
+import time
+import datetime
 import numpy as np
 from scipy.stats import mode
 import cv2
@@ -16,10 +22,6 @@ import logging
 
 denoise_logger = logging.getLogger(__name__)
 
-from cellpose import transforms, resnet_torch, utils, io
-from cellpose.core import run_net
-from cellpose.resnet_torch import CPnet
-from cellpose.models import CellposeModel, model_path, normalize_default, assign_device, check_mkl
 
 MODEL_NAMES = []
 for ctype in ["cyto3", "cyto2", "nuclei"]:
@@ -117,7 +119,8 @@ def loss_fn_per(img, net1, yl):
     Sigma_test = get_sigma(yl)
     losses = torch.zeros(len(Sigma[0]), device=img.device)
     for k in range(len(Sigma)):
-        losses = losses + (((Sigma_test[k] - Sigma[k])**2).mean((1, 2)) / sd[k]**2)
+        losses = losses + \
+            (((Sigma_test[k] - Sigma[k])**2).mean((1, 2)) / sd[k]**2)
     return losses.mean()
 
 
@@ -139,7 +142,9 @@ def test_loss(net0, X, net1=None, img=None, lbl=None, lam=[1., 1.5, 0.]):
     net0.eval()
     if net1 is not None:
         net1.eval()
-    loss, loss_per = torch.zeros(1, device=X.device), torch.zeros(1, device=X.device)
+    loss, loss_per = torch.zeros(
+        1, device=X.device), torch.zeros(
+        1, device=X.device)
 
     with torch.no_grad():
         img_dn = net0(X)[0]
@@ -173,7 +178,9 @@ def train_loss(net0, X, net1=None, img=None, lbl=None, lam=[1., 1.5, 0.]):
     net0.train()
     if net1 is not None:
         net1.eval()
-    loss, loss_per = torch.zeros(1, device=X.device), torch.zeros(1, device=X.device)
+    loss, loss_per = torch.zeros(
+        1, device=X.device), torch.zeros(
+        1, device=X.device)
 
     img_dn = net0(X)[0]
     if lam[2] > 0.:
@@ -200,8 +207,8 @@ def img_norm(imgi):
     """
     shape = imgi.shape
     imgi = imgi.reshape(imgi.shape[0], imgi.shape[1], -1)
-    perc = torch.quantile(imgi, torch.tensor([0.01, 0.99], device=imgi.device), dim=-1,
-                          keepdim=True)
+    perc = torch.quantile(imgi, torch.tensor(
+        [0.01, 0.99], device=imgi.device), dim=-1, keepdim=True)
     for k in range(imgi.shape[1]):
         hask = (perc[1, :, k, 0] - perc[0, :, k, 0]) > 1e-3
         imgi[hask, k] -= perc[0, hask, k]
@@ -210,9 +217,23 @@ def img_norm(imgi):
     return imgi
 
 
-def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsample=0.7,
-              ds_max=7, diams=None, pscale=None, iso=True, sigma0=None, sigma1=None,
-              ds=None, uniform_blur=False, partial_blur=False):
+def add_noise(
+        lbl,
+        alpha=4,
+        beta=0.7,
+        poisson=0.7,
+        blur=0.7,
+        gblur=1.0,
+        downsample=0.7,
+        ds_max=7,
+        diams=None,
+        pscale=None,
+        iso=True,
+        sigma0=None,
+        sigma1=None,
+        ds=None,
+        uniform_blur=False,
+        partial_blur=False):
     """Adds noise to the input image.
 
     Args:
@@ -238,8 +259,9 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
     imgi = torch.zeros_like(lbl)
     Ly, Lx = lbl.shape[-2:]
 
-    diams = diams if diams is not None else 30. * torch.ones(len(lbl), device=device)
-    #ds0 = 1 if ds is None else ds.item()
+    diams = diams if diams is not None else 30. * \
+        torch.ones(len(lbl), device=device)
+    # ds0 = 1 if ds is None else ds.item()
     ds = ds * torch.ones(
         (len(lbl),), device=device, dtype=torch.long) if ds is not None else ds
 
@@ -248,8 +270,13 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
     idownsample = np.random.rand(len(lbl)) < downsample
     if (ds is None and idownsample.sum() > 0.) or not iso:
         ds = torch.ones(len(lbl), dtype=torch.long, device=device)
-        ds[idownsample] = torch.randint(2, ds_max + 1, size=(idownsample.sum(),),
-                                        device=device)
+        ds[idownsample] = torch.randint(
+            2,
+            ds_max + 1,
+            size=(
+                idownsample.sum(),
+            ),
+            device=device)
         ii = torch.nonzero(ds > 1).flatten()
     elif ds is not None and (ds > 1).sum():
         ii = torch.nonzero(ds > 1).flatten()
@@ -263,13 +290,15 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
                 xr = torch.rand(len(lbl), device=device)
                 if len(ii) > 0:
                     xr[ii] = ds[ii].float() / 2. / gblur
-                sigma0 = diams[iblur] / 30. * gblur * (1 / gblur + (1 - 1 / gblur) * xr[iblur])
+                sigma0 = diams[iblur] / 30. * gblur * \
+                    (1 / gblur + (1 - 1 / gblur) * xr[iblur])
                 sigma1 = sigma0.clone()
             elif not iso:
                 xr = torch.rand(len(lbl), device=device)
                 if len(ii) > 0:
                     xr[ii] = (ds[ii].float()) / gblur
-                    xr[ii] = xr[ii] + torch.rand(len(ii), device=device) * 0.7 - 0.35
+                    xr[ii] = xr[ii] + \
+                        torch.rand(len(ii), device=device) * 0.7 - 0.35
                     xr[ii] = torch.clip(xr[ii], 0.05, 1.5)
                 sigma0 = diams[iblur] / 30. * gblur * xr[iblur]
                 sigma1 = sigma0.clone() / 10.
@@ -277,8 +306,8 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
                 xrand = np.random.exponential(1, size=iblur.sum())
                 xrand = np.clip(xrand * 0.5, 0.1, 1.0)
                 xrand *= gblur
-                sigma0 = diams[iblur] / 30. * 5. * torch.from_numpy(xrand).float().to(
-                    device)
+                sigma0 = diams[iblur] / 30. * 5. * \
+                    torch.from_numpy(xrand).float().to(device)
                 sigma1 = sigma0.clone()
         else:
             sigma0 = sigma0 * torch.ones((iblur.sum(),), device=device)
@@ -301,21 +330,21 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
         gfilt /= gfilt.sum(axis=(1, 2), keepdims=True)
 
         lbl_blur = conv2d(lbl[iblur].transpose(1, 0), gfilt.unsqueeze(1),
-                             padding=gfilt.shape[-1] // 2,
-                             groups=gfilt.shape[0]).transpose(1, 0)
+                          padding=gfilt.shape[-1] // 2,
+                          groups=gfilt.shape[0]).transpose(1, 0)
         if partial_blur:
-            #yc, xc = np.random.randint(100, Ly-100), np.random.randint(100, Lx-100)
+            # yc, xc = np.random.randint(100, Ly-100), np.random.randint(100, Lx-100)
             imgi[iblur] = lbl[iblur].clone()
             Lxc = int(Lx * 0.85)
-            ym, xm = torch.meshgrid(torch.zeros(Ly, dtype=torch.float32), 
-                                    torch.arange(0, Lxc, dtype=torch.float32), 
-                        indexing="ij")
-            mask = torch.exp(-(ym**2 + xm**2) / 2*(0.001**2))
+            ym, xm = torch.meshgrid(torch.zeros(Ly, dtype=torch.float32),
+                                    torch.arange(0, Lxc, dtype=torch.float32),
+                                    indexing="ij")
+            mask = torch.exp(-(ym**2 + xm**2) / 2 * (0.001**2))
             mask -= mask.min()
             mask /= mask.max()
             lbl_blur_crop = lbl_blur[:, :, :, :Lxc]
-            imgi[iblur, :, :, :Lxc] = (lbl_blur_crop * mask + 
-                                (1-mask) * imgi[iblur, :, :, :Lxc])
+            imgi[iblur, :, :, :Lxc] = (lbl_blur_crop * mask +
+                                       (1 - mask) * imgi[iblur, :, :, :Lxc])
         else:
             imgi[iblur] = lbl_blur
 
@@ -323,7 +352,8 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
 
     # apply downsample
     for k in ii:
-        i0 = imgi[k:k + 1, :, ::ds[k], ::ds[k]] if iso else imgi[k:k + 1, :, ::ds[k]]
+        i0 = imgi[k:k + 1, :, ::ds[k], ::ds[k]
+                  ] if iso else imgi[k:k + 1, :, ::ds[k]]
         imgi[k] = interpolate(i0, size=lbl[k].shape[-2:], mode="bilinear")
 
     # add poisson noise
@@ -333,10 +363,11 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
             pscale = torch.zeros(len(lbl))
             m = torch.distributions.gamma.Gamma(alpha, beta)
             pscale = torch.clamp(m.rsample(sample_shape=(ipoisson.sum(),)), 1.)
-            #pscale = torch.clamp(20 * (torch.rand(size=(len(lbl),), device=lbl.device)), 1.5)
+            # pscale = torch.clamp(20 * (torch.rand(size=(len(lbl),), device=lbl.device)), 1.5)
             pscale = pscale.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).to(device)
         else:
-            pscale = pscale * torch.ones((ipoisson.sum(), 1, 1, 1), device=device)
+            pscale = pscale * \
+                torch.ones((ipoisson.sum(), 1, 1, 1), device=device)
         imgi[ipoisson] = torch.poisson(pscale * imgi[ipoisson])
     imgi[~ipoisson] = imgi[~ipoisson]
 
@@ -346,11 +377,24 @@ def add_noise(lbl, alpha=4, beta=0.7, poisson=0.7, blur=0.7, gblur=1.0, downsamp
     return imgi
 
 
-def random_rotate_and_resize_noise(data, labels=None, diams=None, poisson=0.7, blur=0.7,
-                                   downsample=0.0, beta=0.7, gblur=1.0, diam_mean=30,
-                                   ds_max=7, uniform_blur=False, iso=True, rotate=True,
-                                   device=torch.device("cuda"), xy=(224, 224),
-                                   nchan_noise=1, keep_raw=True):
+def random_rotate_and_resize_noise(data,
+                                   labels=None,
+                                   diams=None,
+                                   poisson=0.7,
+                                   blur=0.7,
+                                   downsample=0.0,
+                                   beta=0.7,
+                                   gblur=1.0,
+                                   diam_mean=30,
+                                   ds_max=7,
+                                   uniform_blur=False,
+                                   iso=True,
+                                   rotate=True,
+                                   device=torch.device("cuda"),
+                                   xy=(224,
+                                       224),
+                                   nchan_noise=1,
+                                   keep_raw=True):
     """
     Applies random rotation, resizing, and noise to the input data.
 
@@ -377,19 +421,25 @@ def random_rotate_and_resize_noise(data, labels=None, diams=None, poisson=0.7, b
         torch.Tensor: The augmented labels.
         float: The scale factor applied to the image.
     """
-    if device == None:
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps') if torch.backends.mps.is_available() else None
-    
+    if device is None:
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device(
+            'mps') if torch.backends.mps.is_available() else None
+
     diams = 30 if diams is None else diams
     random_diam = diam_mean * (2**(2 * np.random.rand(len(data)) - 1))
-    random_rsc = diams / random_diam  #/ random_diam
-    #rsc /= random_scale
+    random_rsc = diams / random_diam  # / random_diam
+    # rsc /= random_scale
     xy0 = (340, 340)
     nchan = data[0].shape[0]
-    data_new = np.zeros((len(data), (1 + keep_raw) * nchan, xy0[0], xy0[1]), "float32")
+    data_new = np.zeros(
+        (len(data),
+         (1 + keep_raw) * nchan,
+            xy0[0],
+            xy0[1]),
+        "float32")
     labels_new = np.zeros((len(data), 3, xy0[0], xy0[1]), "float32")
-    for i in range(
-            len(data)):  #, (sc, img, lbl) in enumerate(zip(random_rsc, data, labels)):
+    # , (sc, img, lbl) in enumerate(zip(random_rsc, data, labels)):
+    for i in range(len(data)):
         sc = random_rsc[i]
         img = data[i]
         lbl = labels[i] if labels is not None else None
@@ -407,16 +457,19 @@ def random_rotate_and_resize_noise(data, labels=None, diams=None, poisson=0.7, b
         # apply to image
         for c in range(nchan):
             img_rsz = cv2.warpAffine(img[c], M, xy0, flags=cv2.INTER_LINEAR)
-            #img_noise = add_noise(torch.from_numpy(img_rsz).to(device).unsqueeze(0)).cpu().numpy().squeeze(0)
+            # img_noise = add_noise(torch.from_numpy(img_rsz).to(device).unsqueeze(0)).cpu().numpy().squeeze(0)
             data_new[i, c] = img_rsz
             if keep_raw:
                 data_new[i, c + nchan] = img_rsz
 
         if lbl is not None:
             # apply to labels
-            labels_new[i, 0] = cv2.warpAffine(lbl[0], M, xy0, flags=cv2.INTER_NEAREST)
-            labels_new[i, 1] = cv2.warpAffine(lbl[1], M, xy0, flags=cv2.INTER_LINEAR)
-            labels_new[i, 2] = cv2.warpAffine(lbl[2], M, xy0, flags=cv2.INTER_LINEAR)
+            labels_new[i, 0] = cv2.warpAffine(
+                lbl[0], M, xy0, flags=cv2.INTER_NEAREST)
+            labels_new[i, 1] = cv2.warpAffine(
+                lbl[1], M, xy0, flags=cv2.INTER_LINEAR)
+            labels_new[i, 2] = cv2.warpAffine(
+                lbl[2], M, xy0, flags=cv2.INTER_LINEAR)
 
     rsc = random_diam / diam_mean
 
@@ -438,7 +491,7 @@ def random_rotate_and_resize_noise(data, labels=None, diams=None, poisson=0.7, b
         Y=labels_new,
         xy=xy,
         rotate=False if not iso else rotate,
-        #(iso and downsample==0),
+        # (iso and downsample==0),
         rescale=rsc,
         scale_range=0.5)
     img = torch.from_numpy(img).to(device)
@@ -472,7 +525,7 @@ def one_chan_cellpose(device, model_type="cyto2", pretrained_model=None):
     print(filename)
     for name in net1.state_dict():
         if ("res_down_0.conv.conv_0" not in name and
-                #"output" not in name and
+                # "output" not in name and
                 "res_down_0.proj" not in name and name != "diam_mean" and
                 name != "diam_labels"):
             net1.state_dict()[name].copy_(weights[name])
@@ -498,16 +551,42 @@ class CellposeDenoiseModel():
                  restore_type="denoise_cyto3", nchan=2,
                  chan2_restore=False, device=None):
 
-        self.dn = DenoiseModel(gpu=gpu, model_type=restore_type, chan2=chan2_restore,
-                               device=device)
-        self.cp = CellposeModel(gpu=gpu, model_type=model_type, nchan=nchan,
-                                pretrained_model=pretrained_model, device=device)
+        self.dn = DenoiseModel(
+            gpu=gpu,
+            model_type=restore_type,
+            chan2=chan2_restore,
+            device=device)
+        self.cp = CellposeModel(
+            gpu=gpu,
+            model_type=model_type,
+            nchan=nchan,
+            pretrained_model=pretrained_model,
+            device=device)
 
-    def eval(self, x, batch_size=8, channels=None, channel_axis=None, z_axis=None,
-             normalize=True, rescale=None, diameter=None, tile_overlap=0.1,
-             augment=False, resample=True, invert=False, flow_threshold=0.4,
-             cellprob_threshold=0.0, do_3D=False, anisotropy=None, stitch_threshold=0.0,
-             min_size=15, niter=None, interp=True, bsize=224, flow3D_smooth=0):
+    def eval(
+            self,
+            x,
+            batch_size=8,
+            channels=None,
+            channel_axis=None,
+            z_axis=None,
+            normalize=True,
+            rescale=None,
+            diameter=None,
+            tile_overlap=0.1,
+            augment=False,
+            resample=True,
+            invert=False,
+            flow_threshold=0.4,
+            cellprob_threshold=0.0,
+            do_3D=False,
+            anisotropy=None,
+            stitch_threshold=0.0,
+            min_size=15,
+            niter=None,
+            interp=True,
+            bsize=224,
+            flow3D_smooth=0):
         """
         Restore array or list of images using the image restoration model, and then segment.
 
@@ -522,12 +601,12 @@ class CellposeDenoiseModel():
                 in green and nuclei in blue, input [2,3]. To segment one grayscale image and one
                 image with cells in green and nuclei in blue, input [[0,0], [2,3]].
                 Defaults to None.
-            channel_axis (int, optional): channel axis in element of list x, or of np.ndarray x. 
+            channel_axis (int, optional): channel axis in element of list x, or of np.ndarray x.
                 if None, channels dimension is attempted to be automatically determined. Defaults to None.
-            z_axis  (int, optional): z axis in element of list x, or of np.ndarray x. 
+            z_axis  (int, optional): z axis in element of list x, or of np.ndarray x.
                 if None, z dimension is attempted to be automatically determined. Defaults to None.
-            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel; 
-                can also pass dictionary of parameters (all keys are optional, default values shown): 
+            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel;
+                can also pass dictionary of parameters (all keys are optional, default values shown):
                     - "lowhigh"=None : pass in normalization values for 0.0 and 1.0 as list [low, high] (if not None, all following parameters ignored)
                     - "sharpen"=0 ; sharpen image with high pass filter, recommended to be 1/4-1/8 diameter of cells in pixels
                     - "normalize"=True ; run normalization (if False, all following parameters ignored)
@@ -537,7 +616,7 @@ class CellposeDenoiseModel():
                 Defaults to True.
             rescale (float, optional): resize factor for each image, if None, set to 1.0;
                 (only used if diameter is None). Defaults to None.
-            diameter (float, optional):  diameter for each image, 
+            diameter (float, optional):  diameter for each image,
                 if diameter is None, set to diam_mean or diam_train if available. Defaults to None.
             tile_overlap (float, optional): fraction of overlap of tiles when computing flows. Defaults to 0.1.
             augment (bool, optional): augment tiles by flipping and averaging for segmentation. Defaults to False.
@@ -552,14 +631,14 @@ class CellposeDenoiseModel():
             flow3D_smooth (int, optional): if do_3D and flow3D_smooth>0, smooth flows with gaussian filter of this stddev. Defaults to 0.
             niter (int, optional): number of iterations for dynamics computation. if None, it is set proportional to the diameter. Defaults to None.
             interp (bool, optional): interpolate during 2D dynamics (not available in 3D) . Defaults to True.
-            
+
         Returns:
-            A tuple containing (masks, flows, styles, imgs); masks: labelled image(s), where 0=no masks; 1,2,...=mask labels; 
+            A tuple containing (masks, flows, styles, imgs); masks: labelled image(s), where 0=no masks; 1,2,...=mask labels;
             flows: list of lists: flows[k][0] = XY flow in HSV 0-255; flows[k][1] = XY(Z) flows at each pixel; flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics); flows[k][3] = final pixel locations after Euler integration;
             styles: style vector summarizing each image of size 256;
             imgs: Restored images.
         """
-        
+
         if isinstance(normalize, dict):
             normalize_params = {**normalize_default, **normalize}
         elif not isinstance(normalize, bool):
@@ -571,7 +650,7 @@ class CellposeDenoiseModel():
 
         img_restore = self.dn.eval(x, batch_size=batch_size, channels=channels,
                                    channel_axis=channel_axis, z_axis=z_axis,
-                                   do_3D=do_3D, 
+                                   do_3D=do_3D,
                                    normalize=normalize_params, rescale=rescale,
                                    diameter=diameter,
                                    tile_overlap=tile_overlap, bsize=bsize)
@@ -631,8 +710,15 @@ class DenoiseModel():
             Run denoising model on a single channel.
     """
 
-    def __init__(self, gpu=False, pretrained_model=False, nchan=1, model_type=None,
-                 chan2=False, diam_mean=30., device=None):
+    def __init__(
+            self,
+            gpu=False,
+            pretrained_model=False,
+            nchan=1,
+            model_type=None,
+            chan2=False,
+            diam_mean=30.,
+            device=None):
         self.nchan = nchan
         if pretrained_model and (not isinstance(pretrained_model, str) and
                                  not isinstance(pretrained_model, Path)):
@@ -648,13 +734,15 @@ class DenoiseModel():
             pretrained_model = model_path(pretrained_model_string)
             if (pretrained_model and not os.path.exists(pretrained_model)):
                 denoise_logger.warning("pretrained model has incorrect path")
-            denoise_logger.info(f">> {pretrained_model_string} << model set to be used")
+            denoise_logger.info(
+                f">> {pretrained_model_string} << model set to be used")
             self.diam_mean = 17. if "nuclei" in pretrained_model_string else 30.
         else:
             if pretrained_model:
                 builtin = False
                 pretrained_model_string = pretrained_model
-                denoise_logger.info(f">>>> loading model {pretrained_model_string}")
+                denoise_logger.info(
+                    f">>>> loading model {pretrained_model_string}")
 
         # assign network device
         self.mkldnn = None
@@ -682,21 +770,33 @@ class DenoiseModel():
         if self.pretrained_model:
             self.net.load_model(self.pretrained_model, device=self.device)
             denoise_logger.info(
-                f">>>> model diam_mean = {self.diam_mean: .3f} (ROIs rescaled to this size during training)"
-            )
+                f">>>> model diam_mean = {
+                    self.diam_mean: .3f} (ROIs rescaled to this size during training)")
             if chan2 and builtin:
-                chan2_path = model_path(
-                    os.path.split(self.pretrained_model)[-1].split("_")[0] + "_nuclei")
-                print(f"loading model for chan2: {os.path.split(str(chan2_path))[-1]}")
+                chan2_path = model_path(os.path.split(
+                    self.pretrained_model)[-1].split("_")[0] + "_nuclei")
+                print(
+                    f"loading model for chan2: {os.path.split(str(chan2_path))[-1]}")
                 self.net_chan2 = CPnet(self.nbase, self.nclasses, sz=3,
                                        mkldnn=self.mkldnn, max_pool=True,
                                        diam_mean=17.).to(self.device)
                 self.net_chan2.load_model(chan2_path, device=self.device)
         self.net_type = "cellpose_denoise"
 
-    def eval(self, x, batch_size=8, channels=None, channel_axis=None, z_axis=None,
-             normalize=True, rescale=None, diameter=None, tile=True, do_3D=False,
-             tile_overlap=0.1, bsize=224):
+    def eval(
+            self,
+            x,
+            batch_size=8,
+            channels=None,
+            channel_axis=None,
+            z_axis=None,
+            normalize=True,
+            rescale=None,
+            diameter=None,
+            tile=True,
+            do_3D=False,
+            tile_overlap=0.1,
+            bsize=224):
         """
         Restore array or list of images using the image restoration model.
 
@@ -711,12 +811,12 @@ class DenoiseModel():
                 in green and nuclei in blue, input [2,3]. To segment one grayscale image and one
                 image with cells in green and nuclei in blue, input [[0,0], [2,3]].
                 Defaults to None.
-            channel_axis (int, optional): channel axis in element of list x, or of np.ndarray x. 
+            channel_axis (int, optional): channel axis in element of list x, or of np.ndarray x.
                 if None, channels dimension is attempted to be automatically determined. Defaults to None.
-            z_axis  (int, optional): z axis in element of list x, or of np.ndarray x. 
+            z_axis  (int, optional): z axis in element of list x, or of np.ndarray x.
                 if None, z dimension is attempted to be automatically determined. Defaults to None.
-            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel; 
-                can also pass dictionary of parameters (all keys are optional, default values shown): 
+            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel;
+                can also pass dictionary of parameters (all keys are optional, default values shown):
                     - "lowhigh"=None : pass in normalization values for 0.0 and 1.0 as list [low, high] (if not None, all following parameters ignored)
                     - "sharpen"=0 ; sharpen image with high pass filter, recommended to be 1/4-1/8 diameter of cells in pixels
                     - "normalize"=True ; run normalization (if False, all following parameters ignored)
@@ -726,10 +826,10 @@ class DenoiseModel():
                 Defaults to True.
             rescale (float, optional): resize factor for each image, if None, set to 1.0;
                 (only used if diameter is None). Defaults to None.
-            diameter (float, optional):  diameter for each image, 
+            diameter (float, optional):  diameter for each image,
                 if diameter is None, set to diam_mean or diam_train if available. Defaults to None.
             tile_overlap (float, optional): fraction of overlap of tiles when computing flows. Defaults to 0.1.
-              
+
         Returns:
             list: A list of 2D/3D arrays of restored images
 
@@ -742,19 +842,32 @@ class DenoiseModel():
             imgs = []
             for i in iterator:
                 imgi = self.eval(
-                    x[i], batch_size=batch_size,
-                    channels=channels[i] if channels is not None and
-                    ((len(channels) == len(x) and
-                      (isinstance(channels[i], list) or
-                       isinstance(channels[i], np.ndarray)) and len(channels[i]) == 2))
-                    else channels, channel_axis=channel_axis, z_axis=z_axis,
+                    x[i],
+                    batch_size=batch_size,
+                    channels=channels[i] if channels is not None and (
+                        (len(channels) == len(x) and (
+                            isinstance(
+                                channels[i],
+                                list) or isinstance(
+                                channels[i],
+                                np.ndarray)) and len(
+                            channels[i]) == 2)) else channels,
+                    channel_axis=channel_axis,
+                    z_axis=z_axis,
                     normalize=normalize,
                     do_3D=do_3D,
-                    rescale=rescale[i] if isinstance(rescale, list) or
-                    isinstance(rescale, np.ndarray) else rescale,
-                    diameter=diameter[i] if isinstance(diameter, list) or
-                    isinstance(diameter, np.ndarray) else diameter, 
-                    tile_overlap=tile_overlap, bsize=bsize)
+                    rescale=rescale[i] if isinstance(
+                        rescale,
+                        list) or isinstance(
+                        rescale,
+                        np.ndarray) else rescale,
+                    diameter=diameter[i] if isinstance(
+                        diameter,
+                        list) or isinstance(
+                        diameter,
+                        np.ndarray) else diameter,
+                    tile_overlap=tile_overlap,
+                    bsize=bsize)
                 imgs.append(imgi)
             if isinstance(x, np.ndarray):
                 imgs = np.array(imgs)
@@ -762,8 +875,13 @@ class DenoiseModel():
 
         else:
             # reshape image
-            x = transforms.convert_image(x, channels, channel_axis=channel_axis,
-                                         z_axis=z_axis, do_3D=do_3D, nchan=None)
+            x = transforms.convert_image(
+                x,
+                channels,
+                channel_axis=channel_axis,
+                z_axis=z_axis,
+                do_3D=do_3D,
+                nchan=None)
             if x.ndim < 4:
                 squeeze = True
                 x = x[np.newaxis, ...]
@@ -777,15 +895,16 @@ class DenoiseModel():
                 if diameter is not None and 3 <= diameter < self.diam_mean:
                     self.ratio = self.diam_mean / diameter
                     denoise_logger.info(
-                        f"upsampling image to {self.diam_mean} pixel diameter ({self.ratio:0.2f} times)"
-                    )
+                        f"upsampling image to {
+                            self.diam_mean} pixel diameter ({
+                            self.ratio:0.2f} times)")
                     Lyr, Lxr = int(Ly * self.ratio), int(Lx * self.ratio)
                     x = transforms.resize_image(x, Ly=Lyr, Lx=Lxr)
                 else:
                     denoise_logger.warning(
-                        f"not interpolating image before upsampling because diameter is set >= {self.diam_mean}"
-                    )
-                    #raise ValueError(f"diameter is set to {diameter}, needs to be >=3 and < {self.dn.diam_mean}")
+                        f"not interpolating image before upsampling because diameter is set >= {
+                            self.diam_mean}")
+                    # raise ValueError(f"diameter is set to {diameter}, needs to be >=3 and < {self.dn.diam_mean}")
 
             self.batch_size = batch_size
 
@@ -794,22 +913,29 @@ class DenoiseModel():
             elif rescale is None:
                 rescale = 1.0
 
-            if np.ptp(x[..., -1]) < 1e-3 or (channels is not None and channels[-1] == 0):
+            if np.ptp(
+                    x[..., -1]) < 1e-3 or (channels is not None and channels[-1] == 0):
                 x = x[..., :1]
 
             for c in range(x.shape[-1]):
                 rescale0 = rescale * 30. / 17. if c == 1 else rescale
                 if c == 0 or self.net_chan2 is None:
                     x[...,
-                      c] = self._eval(self.net, x[..., c:c + 1], batch_size=batch_size,
-                                      normalize=normalize, rescale=rescale0, 
-                                      tile_overlap=tile_overlap, bsize=bsize)[...,0]
+                      c] = self._eval(self.net,
+                                      x[...,
+                                        c:c + 1],
+                                      batch_size=batch_size,
+                                      normalize=normalize,
+                                      rescale=rescale0,
+                                      tile_overlap=tile_overlap,
+                                      bsize=bsize)[...,
+                                                   0]
                 else:
                     x[...,
                       c] = self._eval(self.net_chan2, x[...,
                                                         c:c + 1], batch_size=batch_size,
-                                      normalize=normalize, rescale=rescale0, 
-                                      tile_overlap=tile_overlap, bsize=bsize)[...,0]
+                                      normalize=normalize, rescale=rescale0,
+                                      tile_overlap=tile_overlap, bsize=bsize)[..., 0]
             x = x[0] if squeeze else x
         return x
 
@@ -822,8 +948,8 @@ class DenoiseModel():
             x (list, np.ndarry): can be list of 2D/3D/4D images, or array of 2D/3D/4D images
             batch_size (int, optional): number of 224x224 patches to run simultaneously on the GPU
                 (can make smaller or bigger depending on GPU memory usage). Defaults to 8.
-            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel; 
-                can also pass dictionary of parameters (all keys are optional, default values shown): 
+            normalize (bool, optional): if True, normalize data so 0.0=1st percentile and 1.0=99th percentile of image intensities in each channel;
+                can also pass dictionary of parameters (all keys are optional, default values shown):
                     - "lowhigh"=None : pass in normalization values for 0.0 and 1.0 as list [low, high] (if not None, all following parameters ignored)
                     - "sharpen"=0 ; sharpen image with high pass filter, recommended to be 1/4-1/8 diameter of cells in pixels
                     - "normalize"=True ; run normalization (if False, all following parameters ignored)
@@ -834,7 +960,7 @@ class DenoiseModel():
             rescale (float, optional): resize factor for each image, if None, set to 1.0;
                 (only used if diameter is None). Defaults to None.
             tile_overlap (float, optional): fraction of overlap of tiles when computing flows. Defaults to 0.1.
-            
+
         Returns:
             list: A list of 2D/3D arrays of restored images
 
@@ -888,14 +1014,40 @@ class DenoiseModel():
         return imgs
 
 
-def train(net, train_data=None, train_labels=None, train_files=None, test_data=None,
-          test_labels=None, test_files=None, train_probs=None, test_probs=None,
-          lam=[1., 1.5, 0.], scale_range=0.5, seg_model_type="cyto2", save_path=None,
-          save_every=100, save_each=False, poisson=0.7, beta=0.7, blur=0.7, gblur=1.0,
-          iso=True, uniform_blur=False, downsample=0., ds_max=7,
-          learning_rate=0.005, n_epochs=500,
-          weight_decay=0.00001, batch_size=8, nimg_per_epoch=None,
-          nimg_test_per_epoch=None, model_name=None):
+def train(
+        net,
+        train_data=None,
+        train_labels=None,
+        train_files=None,
+        test_data=None,
+        test_labels=None,
+        test_files=None,
+        train_probs=None,
+        test_probs=None,
+        lam=[
+            1.,
+            1.5,
+            0.],
+    scale_range=0.5,
+    seg_model_type="cyto2",
+    save_path=None,
+    save_every=100,
+    save_each=False,
+    poisson=0.7,
+    beta=0.7,
+    blur=0.7,
+    gblur=1.0,
+    iso=True,
+    uniform_blur=False,
+    downsample=0.,
+    ds_max=7,
+    learning_rate=0.005,
+    n_epochs=500,
+    weight_decay=0.00001,
+    batch_size=8,
+    nimg_per_epoch=None,
+    nimg_test_per_epoch=None,
+        model_name=None):
 
     # net properties
     device = net.device
@@ -910,7 +1062,7 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
 
     d = datetime.datetime.now()
     if save_path is not None:
-        if model_name is None:  
+        if model_name is None:
             filename = ""
             lstrs = ["per", "seg", "rec"]
             for k, (l, s) in enumerate(zip(lam, lstrs)):
@@ -930,8 +1082,12 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
         print(filename)
     for i in range(len(poisson)):
         denoise_logger.info(
-            f"poisson: {poisson[i]: 0.2f}, beta: {beta[i]: 0.2f}, blur: {blur[i]: 0.2f}, gblur: {gblur[i]: 0.2f}, downsample: {downsample[i]: 0.2f}"
-        )
+            f"poisson: {
+                poisson[i]: 0.2f}, beta: {
+                beta[i]: 0.2f}, blur: {
+                blur[i]: 0.2f}, gblur: {
+                    gblur[i]: 0.2f}, downsample: {
+                        downsample[i]: 0.2f}")
     net1 = one_chan_cellpose(device=device, pretrained_model=seg_model_type)
 
     learning_rate_const = learning_rate
@@ -946,18 +1102,22 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
                                   weight_decay=weight_decay)
     if train_data is not None:
         nimg = len(train_data)
-        diam_train = np.array(
-            [utils.diameters(train_labels[k])[0] for k in trange(len(train_labels))])
+        diam_train = np.array([utils.diameters(train_labels[k])[0]
+                               for k in trange(len(train_labels))])
         diam_train[diam_train < 5] = 5.
         if test_data is not None:
-            diam_test = np.array(
-                [utils.diameters(test_labels[k])[0] for k in trange(len(test_labels))])
+            diam_test = np.array([utils.diameters(test_labels[k])[0]
+                                  for k in trange(len(test_labels))])
             diam_test[diam_test < 5] = 5.
             nimg_test = len(test_data)
     else:
         nimg = len(train_files)
         denoise_logger.info(">>> using files instead of loading dataset")
-        train_labels_files = [str(tf)[:-4] + f"_flows.tif" for tf in train_files]
+        train_labels_files = [
+            str(tf)[
+                :-
+                4] +
+            f"_flows.tif" for tf in train_files]
         denoise_logger.info(">>> computing diameters")
         diam_train = np.array([
             utils.diameters(io.imread(train_labels_files[k])[0])[0]
@@ -966,14 +1126,18 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
         diam_train[diam_train < 5] = 5.
         if test_files is not None:
             nimg_test = len(test_files)
-            test_labels_files = [str(tf)[:-4] + f"_flows.tif" for tf in test_files]
+            test_labels_files = [
+                str(tf)[
+                    :-
+                    4] +
+                f"_flows.tif" for tf in test_files]
             diam_test = np.array([
                 utils.diameters(io.imread(test_labels_files[k])[0])[0]
                 for k in trange(len(test_labels_files))
             ])
             diam_test[diam_test < 5] = 5.
-    train_probs = 1. / nimg * np.ones(nimg,
-                                      "float64") if train_probs is None else train_probs
+    train_probs = 1. / nimg * \
+        np.ones(nimg, "float64") if train_probs is None else train_probs
     if test_files is not None or test_data is not None:
         test_probs = 1. / nimg_test * np.ones(
             nimg_test, "float64") if test_probs is None else test_probs
@@ -996,29 +1160,33 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
             param_group["lr"] = learning_rate[iepoch]
         lavg, lavg_per, nsum = 0, 0, 0
         for ibatch in range(0, nimg_per_epoch, batch_size * nnoise):
-            inds = rperm[ibatch : ibatch + batch_size * nnoise]
+            inds = rperm[ibatch: ibatch + batch_size * nnoise]
             if train_data is None:
-                imgs = [np.maximum(0, io.imread(train_files[i])[:nchan]) for i in inds]
+                imgs = [
+                    np.maximum(
+                        0, io.imread(
+                            train_files[i])[
+                            :nchan]) for i in inds]
                 lbls = [io.imread(train_labels_files[i])[1:] for i in inds]
             else:
                 imgs = [train_data[i][:nchan] for i in inds]
                 lbls = [train_labels[i][1:] for i in inds]
-            #inoise = nbatch % nnoise
+            # inoise = nbatch % nnoise
             rnoise = np.random.permutation(nnoise)
             for i, inoise in enumerate(rnoise):
                 if i * batch_size < len(imgs):
                     imgi, lbli, scale = random_rotate_and_resize_noise(
-                        imgs[i * batch_size : (i + 1) * batch_size], 
-                        lbls[i * batch_size : (i + 1) * batch_size],
-                        diam_train[inds][i * batch_size : (i + 1) * batch_size].copy(), 
+                        imgs[i * batch_size: (i + 1) * batch_size],
+                        lbls[i * batch_size: (i + 1) * batch_size],
+                        diam_train[inds][i * batch_size: (i + 1) * batch_size].copy(),
                         poisson=poisson[inoise],
                         beta=beta[inoise], gblur=gblur[inoise], blur=blur[inoise], iso=iso,
                         downsample=downsample[inoise], uniform_blur=uniform_blur,
                         diam_mean=diam_mean, ds_max=ds_max,
                         device=device)
                     if i == 0:
-                        img = imgi 
-                        lbl = lbli 
+                        img = imgi
+                        lbl = lbli
                     else:
                         img = torch.cat((img, imgi), axis=0)
                         lbl = torch.cat((lbl, lbli), axis=0)
@@ -1026,14 +1194,14 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
             if nnoise > 0:
                 iperm = np.random.permutation(img.shape[0])
                 img, lbl = img[iperm], lbl[iperm]
-            
+
             for i in range(nnoise):
                 optimizer.zero_grad()
                 imgi = img[i * batch_size: (i + 1) * batch_size]
                 lbli = lbl[i * batch_size: (i + 1) * batch_size]
                 if imgi.shape[0] > 0:
                     loss, loss_per = train_loss(net, imgi[:, :nchan], net1=net1,
-                                            img=imgi[:, nchan:], lbl=lbli, lam=lam)
+                                                img=imgi[:, nchan:], lbl=lbli, lam=lam)
                     loss.backward()
                     optimizer.step()
                     lavg += loss.item() * imgi.shape[0]
@@ -1048,18 +1216,22 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
             if test_data is not None or test_files is not None:
                 lavgt, nsum = 0., 0
                 np.random.seed(42)
-                rperm = np.random.choice(np.arange(0, nimg_test),
-                                         size=(nimg_test_per_epoch,), p=test_probs)
+                rperm = np.random.choice(
+                    np.arange(
+                        0, nimg_test), size=(
+                        nimg_test_per_epoch,), p=test_probs)
                 inoise = iepoch % nnoise
                 torch.manual_seed(inoise)
                 for ibatch in range(0, nimg_test_per_epoch, batch_size):
                     inds = rperm[ibatch:ibatch + batch_size]
                     if test_data is None:
                         imgs = [
-                            np.maximum(0,
-                                       io.imread(test_files[i])[:nchan]) for i in inds
-                        ]
-                        lbls = [io.imread(test_labels_files[i])[1:] for i in inds]
+                            np.maximum(
+                                0, io.imread(
+                                    test_files[i])[
+                                    :nchan]) for i in inds]
+                        lbls = [io.imread(test_labels_files[i])[1:]
+                                for i in inds]
                     else:
                         imgs = [test_data[i][:nchan] for i in inds]
                         lbls = [test_labels[i][1:] for i in inds]
@@ -1075,23 +1247,24 @@ def train(net, train_data=None, train_labels=None, train_files=None, test_data=N
                     nsum += len(img)
                 lavgt = lavgt / nsum
                 denoise_logger.info(
-                    "Epoch %d, Time %4.1fs, Loss %0.3f, loss_per %0.3f, Loss Test %0.3f, LR %2.4f"
-                    % (iepoch, time.time() - tic, lavg, lavg_per, lavgt,
-                       learning_rate[iepoch]))
+                    "Epoch %d, Time %4.1fs, Loss %0.3f, loss_per %0.3f, Loss Test %0.3f, LR %2.4f" %
+                    (iepoch, time.time() - tic, lavg, lavg_per, lavgt, learning_rate[iepoch]))
                 test_losses.append(lavgt)
             else:
                 denoise_logger.info(
                     "Epoch %d, Time %4.1fs, Loss %0.3f, loss_per %0.3f, LR %2.4f" %
                     (iepoch, time.time() - tic, lavg, lavg_per, learning_rate[iepoch]))
             train_losses.append(lavg)
-            
+
         if save_path is not None:
-            if iepoch == n_epochs - 1 or (iepoch % save_every == 0 and iepoch != 0):
-                if save_each:  #separate files as model progresses
+            if iepoch == n_epochs - 1 or (iepoch %
+                                          save_every == 0 and iepoch != 0):
+                if save_each:  # separate files as model progresses
                     filename0 = str(filename) + f"_epoch_{iepoch:%04d}"
                 else:
                     filename0 = filename
-                denoise_logger.info(f"saving network parameters to {filename0}")
+                denoise_logger.info(
+                    f"saving network parameters to {filename0}")
                 net.save_model(filename0)
         else:
             filename = save_path
@@ -1104,8 +1277,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="cellpose parameters")
 
     input_img_args = parser.add_argument_group("input image arguments")
-    input_img_args.add_argument("--dir", default=[], type=str,
-                                help="folder containing data to run or train on.")
+    input_img_args.add_argument(
+        "--dir",
+        default=[],
+        type=str,
+        help="folder containing data to run or train on.")
     input_img_args.add_argument("--img_filter", default=[], type=str,
                                 help="end string for images to run on")
 
@@ -1116,15 +1292,21 @@ if __name__ == "__main__":
     training_args = parser.add_argument_group("training arguments")
     training_args.add_argument("--test_dir", default=[], type=str,
                                help="folder containing test data (optional)")
-    training_args.add_argument("--file_list", default=[], type=str,
-                               help="npy file containing list of train and test files")
+    training_args.add_argument(
+        "--file_list",
+        default=[],
+        type=str,
+        help="npy file containing list of train and test files")
     training_args.add_argument("--seg_model_type", default="cyto2", type=str,
                                help="model to use for seg training loss")
     training_args.add_argument(
         "--noise_type", default=[], type=str,
         help="noise type to use (if input, then other noise params are ignored)")
-    training_args.add_argument("--poisson", default=0.8, type=float,
-                               help="fraction of images to add poisson noise to")
+    training_args.add_argument(
+        "--poisson",
+        default=0.8,
+        type=float,
+        help="fraction of images to add poisson noise to")
     training_args.add_argument("--beta", default=0.7, type=float,
                                help="scale of poisson noise")
     training_args.add_argument("--blur", default=0., type=float,
@@ -1142,9 +1324,10 @@ if __name__ == "__main__":
     training_args.add_argument("--lam_rec", default=0., type=float,
                                help="weighting of reconstruction loss")
     training_args.add_argument(
-        "--diam_mean", default=30., type=float, help=
-        "mean diameter to resize cells to during training -- if starting from pretrained models it cannot be changed from 30.0"
-    )
+        "--diam_mean",
+        default=30.,
+        type=float,
+        help="mean diameter to resize cells to during training -- if starting from pretrained models it cannot be changed from 30.0")
     training_args.add_argument("--learning_rate", default=0.001, type=float,
                                help="learning rate. Default: %(default)s")
     training_args.add_argument("--n_epochs", default=2000, type=int,
@@ -1230,7 +1413,8 @@ if __name__ == "__main__":
     train_data, labels, train_files, train_probs = None, None, None, None
     test_data, test_labels, test_files, test_probs = None, None, None, None
     if len(args.file_list) == 0:
-        output = io.load_train_test_data(args.dir, args.test_dir, "_img", "_masks", 0)
+        output = io.load_train_test_data(
+            args.dir, args.test_dir, "_img", "_masks", 0)
         images, labels, image_names, test_images, test_labels, image_names_test = output
         train_data = []
         for i in range(len(images)):
@@ -1246,7 +1430,9 @@ if __name__ == "__main__":
                 if img.ndim > 2:
                     img = img[0]
                 test_data.append(
-                    np.maximum(transforms.normalize99(img), 0)[np.newaxis, :, :])
+                    np.maximum(
+                        transforms.normalize99(img), 0)[
+                        np.newaxis, :, :])
         save_path = os.path.join(args.dir, "../models/")
     else:
         root = args.dir
@@ -1275,25 +1461,57 @@ if __name__ == "__main__":
     nimg_test_per_epoch = None if args.nimg_test_per_epoch == 0 else args.nimg_test_per_epoch
 
     model_path = train(
-        model.net, train_data=train_data, train_labels=labels, train_files=train_files,
-        test_data=test_data, test_labels=test_labels, test_files=test_files,
-        train_probs=train_probs, test_probs=test_probs, poisson=poisson, beta=beta,
-        blur=blur, gblur=gblur, downsample=downsample, ds_max=args.ds_max,
-        iso=iso, uniform_blur=uniform_blur, n_epochs=args.n_epochs,
+        model.net,
+        train_data=train_data,
+        train_labels=labels,
+        train_files=train_files,
+        test_data=test_data,
+        test_labels=test_labels,
+        test_files=test_files,
+        train_probs=train_probs,
+        test_probs=test_probs,
+        poisson=poisson,
+        beta=beta,
+        blur=blur,
+        gblur=gblur,
+        downsample=downsample,
+        ds_max=args.ds_max,
+        iso=iso,
+        uniform_blur=uniform_blur,
+        n_epochs=args.n_epochs,
         learning_rate=args.learning_rate,
-        lam=lams, 
-        seg_model_type=args.seg_model_type, nimg_per_epoch=nimg_per_epoch,
-        nimg_test_per_epoch=nimg_test_per_epoch, save_path=save_path)
+        lam=lams,
+        seg_model_type=args.seg_model_type,
+        nimg_per_epoch=nimg_per_epoch,
+        nimg_test_per_epoch=nimg_test_per_epoch,
+        save_path=save_path)
 
 
-def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels=None,
-                    poisson=0.8, blur=0.0, downsample=0.0, save_path=None,
-                    save_every=100, save_each=False, learning_rate=0.2, n_epochs=500,
-                    momentum=0.9, weight_decay=0.00001, SGD=True, batch_size=8,
-                    nimg_per_epoch=None, diameter=None, rescale=True, z_masking=False,
-                    model_name=None):
+def seg_train_noisy(
+        model,
+        train_data,
+        train_labels,
+        test_data=None,
+        test_labels=None,
+        poisson=0.8,
+        blur=0.0,
+        downsample=0.0,
+        save_path=None,
+        save_every=100,
+        save_each=False,
+        learning_rate=0.2,
+        n_epochs=500,
+        momentum=0.9,
+        weight_decay=0.00001,
+        SGD=True,
+        batch_size=8,
+        nimg_per_epoch=None,
+        diameter=None,
+        rescale=True,
+        z_masking=False,
+        model_name=None):
     """ train function uses loss function model.loss_fn in models.py
-    
+
     (data should already be normalized)
 
     """
@@ -1317,13 +1535,16 @@ def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels
             LR = np.linspace(0, model.learning_rate_const, 10)
             if model.n_epochs > 250:
                 LR = np.append(
-                    LR, model.learning_rate_const * np.ones(model.n_epochs - 100))
+                    LR,
+                    model.learning_rate_const *
+                    np.ones(
+                        model.n_epochs -
+                        100))
                 for i in range(10):
                     LR = np.append(LR, LR[-1] / 2 * np.ones(10))
             else:
-                LR = np.append(
-                    LR,
-                    model.learning_rate_const * np.ones(max(0, model.n_epochs - 10)))
+                LR = np.append(LR, model.learning_rate_const *
+                               np.ones(max(0, model.n_epochs - 10)))
         else:
             LR = model.learning_rate_const * np.ones(model.n_epochs)
         model.learning_rate = LR
@@ -1336,8 +1557,8 @@ def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels
 
     # compute average cell diameter
     if diameter is None:
-        diam_train = np.array(
-            [utils.diameters(train_labels[k][0])[0] for k in range(len(train_labels))])
+        diam_train = np.array([utils.diameters(train_labels[k][0])[
+            0] for k in range(len(train_labels))])
         diam_train_mean = diam_train[diam_train > 0].mean()
         model.diam_labels = diam_train_mean
         if rescale:
@@ -1348,24 +1569,32 @@ def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels
                     for k in range(len(test_labels))
                 ])
                 diam_test[diam_test < 5] = 5.
-            denoise_logger.info(">>>> median diameter set to = %d" % model.diam_mean)
+            denoise_logger.info(
+                ">>>> median diameter set to = %d" %
+                model.diam_mean)
     elif rescale:
         diam_train_mean = diameter
         model.diam_labels = diameter
-        denoise_logger.info(">>>> median diameter set to = %d" % model.diam_mean)
+        denoise_logger.info(
+            ">>>> median diameter set to = %d" %
+            model.diam_mean)
         diam_train = diameter * np.ones(len(train_labels), "float32")
         if test_data is not None:
             diam_test = diameter * np.ones(len(test_labels), "float32")
 
     denoise_logger.info(
-        f">>>> mean of training label mask diameters (saved to model) {diam_train_mean:.3f}"
-    )
-    model.net.diam_labels.data = torch.ones(1, device=model.device) * diam_train_mean
+        f">>>> mean of training label mask diameters (saved to model) {
+            diam_train_mean:.3f}")
+    model.net.diam_labels.data = torch.ones(
+        1, device=model.device) * diam_train_mean
 
     nchan = train_data[0].shape[0]
-    denoise_logger.info(">>>> training network with %d channel input <<<<" % nchan)
-    denoise_logger.info(">>>> LR: %0.5f, batch_size: %d, weight_decay: %0.5f" %
-                        (model.learning_rate_const, model.batch_size, weight_decay))
+    denoise_logger.info(
+        ">>>> training network with %d channel input <<<<" %
+        nchan)
+    denoise_logger.info(
+        ">>>> LR: %0.5f, batch_size: %d, weight_decay: %0.5f" %
+        (model.learning_rate_const, model.batch_size, weight_decay))
 
     if test_data is not None:
         denoise_logger.info(f">>>> ntrain = {nimg}, ntest = {len(test_data)}")
@@ -1447,8 +1676,7 @@ def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels
 
                 denoise_logger.info(
                     "Epoch %d, Time %4.1fs, Loss %2.4f, Loss Test %2.4f, LR %2.4f" %
-                    (iepoch, time.time() - tic, lavg, lavgt / nsum,
-                     model.learning_rate[iepoch]))
+                    (iepoch, time.time() - tic, lavg, lavgt / nsum, model.learning_rate[iepoch]))
             else:
                 denoise_logger.info(
                     "Epoch %d, Time %4.1fs, Loss %2.4f, LR %2.4f" %
@@ -1459,17 +1687,18 @@ def seg_train_noisy(model, train_data, train_labels, test_data=None, test_labels
         if save_path is not None:
             if iepoch == model.n_epochs - 1 or iepoch % save_every == 1:
                 # save model at the end
-                if save_each:  #separate files as model progresses
+                if save_each:  # separate files as model progresses
                     if model_name is None:
                         filename = "{}_{}_{}_{}".format(
                             model.net_type, file_label,
                             d.strftime("%Y_%m_%d_%H_%M_%S.%f"), "epoch_" + str(iepoch))
                     else:
-                        filename = "{}_{}".format(model_name, "epoch_" + str(iepoch))
+                        filename = "{}_{}".format(
+                            model_name, "epoch_" + str(iepoch))
                 else:
                     if model_name is None:
-                        filename = "{}_{}_{}".format(model.net_type, file_label,
-                                                     d.strftime("%Y_%m_%d_%H_%M_%S.%f"))
+                        filename = "{}_{}_{}".format(
+                            model.net_type, file_label, d.strftime("%Y_%m_%d_%H_%M_%S.%f"))
                     else:
                         filename = model_name
                 filename = os.path.join(file_path, filename)

@@ -115,7 +115,13 @@ def download_and_normalize_image(path_dir_temp, channels=DEFAULT_CHANNELS):
         sys.stderr.write(f'Downloading: "{IMAGE_URL}" to {path_image}\n')
         download_url_to_file(IMAGE_URL, path_image)
     img = imread(path_image).astype(np.float32)
-    img = convert_image(img, channels, channel_axis=1, z_axis=0, do_3D=False, nchan=2)
+    img = convert_image(
+        img,
+        channels,
+        channel_axis=1,
+        z_axis=0,
+        do_3D=False,
+        nchan=2)
     img = normalize_img(img, **DEFAULT_NORMALIZE_PARAMS)
     img = np.transpose(img, (0, 3, 1, 2))
     img, _, _ = pad_image_ND(img)
@@ -132,7 +138,10 @@ def load_bioimageio_cpnet_model(path_model_weight, nchan=2):
         "max_pool": True,
     }
     cpnet_biio = CPnetBioImageIO(**cpnet_kwargs)
-    state_dict_cuda = torch.load(path_model_weight, map_location=torch.device("cpu"), weights_only=True)
+    state_dict_cuda = torch.load(
+        path_model_weight,
+        map_location=torch.device("cpu"),
+        weights_only=True)
     cpnet_biio.load_state_dict(state_dict_cuda)
     cpnet_biio.eval()  # crucial for the prediction results
     return cpnet_biio, cpnet_kwargs
@@ -141,7 +150,7 @@ def load_bioimageio_cpnet_model(path_model_weight, nchan=2):
 def descr_gen_input(path_test_input, nchan=2):
     input_axes = [
         SpaceInputAxis(id=AxisId("z"), size=ARBITRARY_SIZE),
-        ChannelAxis(channel_names=[Identifier(f"c{i+1}") for i in range(nchan)]),
+        ChannelAxis(channel_names=[Identifier(f"c{i + 1}") for i in range(nchan)]),
         SpaceInputAxis(id=AxisId("y"), size=ParameterizedSize(min=16, step=16)),
         SpaceInputAxis(id=AxisId("x"), size=ParameterizedSize(min=16, step=16)),
     ]
@@ -158,11 +167,15 @@ def descr_gen_input(path_test_input, nchan=2):
 
 def descr_gen_output_flow(path_test_output):
     output_axes_output_tensor = [
-        SpaceOutputAxis(id=AxisId("z"), size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("z"))),
-        ChannelAxis(channel_names=[Identifier("flow1"), Identifier("flow2"), Identifier("flow3")]),
-        SpaceOutputAxis(id=AxisId("y"), size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("y"))),
-        SpaceOutputAxis(id=AxisId("x"), size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("x"))),
-    ]
+        SpaceOutputAxis(
+            id=AxisId("z"), size=SizeReference(
+                tensor_id=TensorId("raw"), axis_id=AxisId("z"))), ChannelAxis(
+            channel_names=[
+                Identifier("flow1"), Identifier("flow2"), Identifier("flow3")]), SpaceOutputAxis(
+            id=AxisId("y"), size=SizeReference(
+                tensor_id=TensorId("raw"), axis_id=AxisId("y"))), SpaceOutputAxis(
+            id=AxisId("x"), size=SizeReference(
+                tensor_id=TensorId("raw"), axis_id=AxisId("x"))), ]
     path_test_output = Path(path_test_output)
     descr_output = OutputTensorDescr(
         id=TensorId("flow"),
@@ -178,24 +191,37 @@ def descr_gen_output_downsampled(path_dir_temp, nbase=None):
 
     output_axes_downsampled_tensors = [
         [
-            SpaceOutputAxis(id=AxisId("z"), size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("z"))),
-            ChannelAxis(channel_names=[Identifier(f"feature{i+1}") for i in range(base)]),
+            SpaceOutputAxis(
+                id=AxisId("z"),
+                size=SizeReference(
+                    tensor_id=TensorId("raw"),
+                    axis_id=AxisId("z"))),
+            ChannelAxis(
+                channel_names=[
+                    Identifier(
+                        f"feature{
+                            i + 1}") for i in range(base)]),
             SpaceOutputAxis(
                 id=AxisId("y"),
-                size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("y")),
+                size=SizeReference(
+                    tensor_id=TensorId("raw"),
+                    axis_id=AxisId("y")),
                 scale=2**offset,
             ),
             SpaceOutputAxis(
                 id=AxisId("x"),
-                size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("x")),
+                size=SizeReference(
+                    tensor_id=TensorId("raw"),
+                    axis_id=AxisId("x")),
                 scale=2**offset,
             ),
-        ]
-        for offset, base in enumerate(nbase)
-    ]
+        ] for offset,
+        base in enumerate(nbase)]
     path_downsampled_tensors = [
-        Path(path_dir_temp / f"test_downsampled_{i}.npy") for i in range(len(output_axes_downsampled_tensors))
-    ]
+        Path(
+            path_dir_temp /
+            f"test_downsampled_{i}.npy") for i in range(
+            len(output_axes_downsampled_tensors))]
     descr_output_downsampled_tensors = [
         OutputTensorDescr(
             id=TensorId(f"downsampled_{i}"),
@@ -209,9 +235,13 @@ def descr_gen_output_downsampled(path_dir_temp, nbase=None):
 
 def descr_gen_output_style(path_test_style, nchannel=256):
     output_axes_style_tensor = [
-        SpaceOutputAxis(id=AxisId("z"), size=SizeReference(tensor_id=TensorId("raw"), axis_id=AxisId("z"))),
-        ChannelAxis(channel_names=[Identifier(f"feature{i+1}") for i in range(nchannel)]),
-    ]
+        SpaceOutputAxis(
+            id=AxisId("z"), size=SizeReference(
+                tensor_id=TensorId("raw"), axis_id=AxisId("z"))), ChannelAxis(
+            channel_names=[
+                Identifier(
+                    f"feature{
+                        i + 1}") for i in range(nchannel)]), ]
     path_style_tensor = Path(path_test_style)
     descr_output_style_tensor = OutputTensorDescr(
         id=TensorId("style"),
@@ -275,14 +305,20 @@ def package_to_bioimageio(
             )
             for author in model_authors
         ],
-        cite=[CiteEntry(text=cite["text"], doi=Doi(cite["doi"]), url=cite["url"]) for cite in model_cite],
+        cite=[
+            CiteEntry(
+                text=cite["text"],
+                doi=Doi(
+                    cite["doi"]),
+                url=cite["url"]) for cite in model_cite],
         covers=[Path(img) for img in list_path_cover_images],
         license=LicenseId(model_license),
         tags=model_tags,
         documentation=Path(path_readme),
         git_repo=HttpUrl(model_repo),
         inputs=[descr_input],
-        outputs=[descr_output, descr_output_style_tensor] + descr_output_downsampled_tensors,
+        outputs=[descr_output, descr_output_style_tensor] +
+        descr_output_downsampled_tensors,
         weights=WeightsDescr(
             pytorch_state_dict=PytorchStateDictWeightsDescr(
                 source=Path(path_pretrained_model),
@@ -292,7 +328,9 @@ def package_to_bioimageio(
             torchscript=TorchscriptWeightsDescr(
                 source=Path(path_save_trace),
                 pytorch_version=pytorch_version,
-                parent="pytorch_state_dict",  # these weights were converted from the pytorch_state_dict weights.
+                parent="pytorch_state_dict",
+                # these weights were converted from the pytorch_state_dict
+                # weights.
             ),
         ),
     )
@@ -331,11 +369,13 @@ def main():
 
     path_readme = Path(args.path_readme)
     path_pretrained_model = Path(args.path_pretrained_model)
-    list_path_cover_images = [Path(path_image) for path_image in args.list_path_cover_images]
+    list_path_cover_images = [Path(path_image)
+                              for path_image in args.list_path_cover_images]
 
     # Auto-generated paths
     path_cpnet_wrapper = Path(__file__).resolve().parent / "resnet_torch.py"
-    path_dir_temp = Path(__file__).resolve().parent.parent / "models" / path_pretrained_model.stem
+    path_dir_temp = Path(__file__).resolve().parent.parent / \
+        "models" / path_pretrained_model.stem
     path_dir_temp.mkdir(parents=True, exist_ok=True)
 
     path_save_trace = path_dir_temp / "cp_traced.pt"
@@ -350,14 +390,18 @@ def main():
     img = torch.tensor(img_np).float()
 
     # Load model
-    cpnet_biio, cpnet_kwargs = load_bioimageio_cpnet_model(path_pretrained_model)
+    cpnet_biio, cpnet_kwargs = load_bioimageio_cpnet_model(
+        path_pretrained_model)
 
     # Test model and save output
     tuple_output_tensor = cpnet_biio(img)
     np.save(path_test_output, tuple_output_tensor[0].detach().numpy())
     np.save(path_test_style, tuple_output_tensor[1].detach().numpy())
     for i, t in enumerate(tuple_output_tensor[2:]):
-        np.save(path_dir_temp / f"test_downsampled_{i}.npy", t.detach().numpy())
+        np.save(
+            path_dir_temp /
+            f"test_downsampled_{i}.npy",
+            t.detach().numpy())
 
     # Save traced model
     model_traced = torch.jit.trace(cpnet_biio, img)
@@ -366,8 +410,10 @@ def main():
     # Generate model description
     descr_input = descr_gen_input(path_test_input)
     descr_output = descr_gen_output_flow(path_test_output)
-    descr_output_downsampled_tensors = descr_gen_output_downsampled(path_dir_temp, nbase=cpnet_biio.nbase[1:])
-    descr_output_style_tensor = descr_gen_output_style(path_test_style, cpnet_biio.nbase[-1])
+    descr_output_downsampled_tensors = descr_gen_output_downsampled(
+        path_dir_temp, nbase=cpnet_biio.nbase[1:])
+    descr_output_style_tensor = descr_gen_output_style(
+        path_test_style, cpnet_biio.nbase[-1])
     pytorch_version = Version(torch.__version__)
     pytorch_architecture = descr_gen_arch(cpnet_kwargs, path_cpnet_wrapper)
 
@@ -402,7 +448,8 @@ def main():
     summary.display()
 
     # Save BioImage.IO package
-    package_path = save_bioimageio_package(my_model_descr, output_path=Path(path_bioimageio_package))
+    package_path = save_bioimageio_package(
+        my_model_descr, output_path=Path(path_bioimageio_package))
     print("package path:", package_path)
 
 

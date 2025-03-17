@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+
 class DropdownPopup(QDialog):
     """a menu that popsup, for when selecting the pipeline to apply the final postprocessing model finetuning"""
 

@@ -2,7 +2,12 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import sys, os, pathlib, warnings, datetime, time
+import sys
+import os
+import pathlib
+import warnings
+import datetime
+import time
 
 from qtpy import QtGui, QtCore
 from superqt import QRangeSlider
@@ -17,7 +22,7 @@ from . import guiparts, menus, io
 from .. import models, core, dynamics, version
 from ..utils import download_url_to_file, masks_to_outlines, diameters
 from ..io import get_image_files, imsave, imread
-from ..transforms import resize_image, normalize99  #fixed import
+from ..transforms import resize_image, normalize99  # fixed import
 from ..plot import disk
 from ..transforms import normalize99_tile, smooth_sharpen_img
 from .gui import MainW
@@ -25,7 +30,7 @@ from .gui import MainW
 try:
     import matplotlib.pyplot as plt
     MATPLOTLIB = True
-except:
+except BaseException:
     MATPLOTLIB = False
 
 
@@ -45,12 +50,19 @@ def avg3d(C):
                        indexing="ij")
     y += 1
     x += 1
-    a = 1. / 2  #/(z**2 + 1)**0.5
-    b = 1. / (1 + 2**0.5)  #(z**2 + 2)**0.5
+    a = 1. / 2  # /(z**2 + 1)**0.5
+    b = 1. / (1 + 2**0.5)  # (z**2 + 2)**0.5
     c = 1.
-    M = (b * T[y - 1, x - 1] + a * T[y - 1, x] + b * T[y - 1, x + 1] + a * T[y, x - 1] +
-         c * T[y, x] + a * T[y, x + 1] + b * T[y + 1, x - 1] + a * T[y + 1, x] +
-         b * T[y + 1, x + 1])
+    M = (b * T[y - 1,
+               x - 1] + a * T[y - 1,
+                              x] + b * T[y - 1,
+                                         x + 1] + a * T[y,
+                                                        x - 1] + c * T[y,
+                                                                       x] + a * T[y,
+                                                                                  x + 1] + b * T[y + 1,
+                                                                                                 x - 1] + a * T[y + 1,
+                                                                                                                x] + b * T[y + 1,
+                                                                                                                           x + 1])
     M /= 4 * a + 4 * b + c
     return M
 
@@ -71,9 +83,9 @@ def interpZ(mask, zdraw):
         plower = avg3d(mask[zlower[k]]) * (1 - zl)
         pupper = avg3d(mask[zupper[k]]) * zl
         mask[z] = (plower + pupper) > 0.33
-        #Ml, norml = avg3d(mask[zlower[k]], zl)
-        #Mu, normu = avg3d(mask[zupper[k]], 1-zl)
-        #mask[z] = (Ml + Mu) / (norml + normu)  > 0.5
+        # Ml, norml = avg3d(mask[zlower[k]], zl)
+        # Mu, normu = avg3d(mask[zupper[k]], 1-zl)
+        # mask[z] = (Ml + Mu) / (norml + normu)  > 0.5
     return mask, zfill
 
 
@@ -95,8 +107,10 @@ def run(image=None):
             icon_path, progress=True)
     if not guip_path.is_file():
         print("downloading help window image")
-        download_url_to_file("https://www.cellpose.org/static/images/cellpose_gui.png",
-                             guip_path, progress=True)
+        download_url_to_file(
+            "https://www.cellpose.org/static/images/cellpose_gui.png",
+            guip_path,
+            progress=True)
     icon_path = str(icon_path.resolve())
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16, 16))
@@ -108,7 +122,7 @@ def run(image=None):
     app.setWindowIcon(app_icon)
     app.setStyle("Fusion")
     app.setPalette(guiparts.DarkPalette())
-    #app.setStyleSheet("QLineEdit { color: yellow }")
+    # app.setStyleSheet("QLineEdit { color: yellow }")
 
     # models.download_model_weights() # does not exist
     MainW_3d(image=image, logger=logger)
@@ -128,7 +142,7 @@ class MainW_3d(MainW):
         # turn off single stroke
         self.SCheckBox.setChecked(False)
 
-        ### add orthoviews and z-bar
+        # add orthoviews and z-bar
         # ortho crosshair lines
         self.vLine = pg.InfiniteLine(angle=90, movable=False)
         self.hLine = pg.InfiniteLine(angle=0, movable=False)
@@ -180,7 +194,7 @@ class MainW_3d(MainW):
         )
         self.segBoxG.addWidget(self.flow3D_smooth, b, 8, 1, 1)
 
-        b+=1
+        b += 1
         label = QLabel("anisotropy:")
         label.setToolTip(
             "for 3D volumes, increase in sampling in Z vs XY as a ratio, e.g. set set to 2.0 if Z is sampled half as dense as X or Y (see docs for details)"
@@ -197,12 +211,13 @@ class MainW_3d(MainW):
         self.segBoxG.addWidget(self.anisotropy, b, 4, 1, 1)
 
         self.resample = QCheckBox("resample")
-        self.resample.setToolTip("reample before creating masks; if diameter > 30 resample will use more CPU+GPU memory (see docs for more details)")
+        self.resample.setToolTip(
+            "reample before creating masks; if diameter > 30 resample will use more CPU+GPU memory (see docs for more details)")
         self.resample.setFont(self.medfont)
         self.resample.setChecked(True)
         self.segBoxG.addWidget(self.resample, b, 5, 1, 4)
 
-        b+=1
+        b += 1
         label = QLabel("min_size:")
         label.setToolTip(
             "all masks less than this size in pixels (volume) will be removed"
@@ -245,7 +260,8 @@ class MainW_3d(MainW):
         self.l0.addWidget(label, b, 5, 1, 2)
         self.zaspect = 1.0
         self.zaspectedit = QLineEdit()
-        self.zaspectedit.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.zaspectedit.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.zaspectedit.setText(str(self.zaspect))
         self.zaspectedit.returnPressed.connect(self.update_ortho)
         self.zaspectedit.setFixedWidth(40)
@@ -287,8 +303,11 @@ class MainW_3d(MainW):
         mall = np.zeros((len(zrange), self.Ly, self.Lx), "bool")
         k = 0
         for z in zdraw:
-            ars, acs, vrs, vcs = np.zeros(0, "int"), np.zeros(0, "int"), np.zeros(
-                0, "int"), np.zeros(0, "int")
+            ars, acs, vrs, vcs = np.zeros(
+                0, "int"), np.zeros(
+                0, "int"), np.zeros(
+                0, "int"), np.zeros(
+                0, "int")
             for stroke in points:
                 stroke = np.concatenate(stroke, axis=0).reshape(-1, 4)
                 iz = stroke[:, 0] == z
@@ -308,8 +327,12 @@ class MainW_3d(MainW):
                     pvc, pvr = contours[-2][0].squeeze().T
                     vr, vc = pvr + vr.min() - 2, pvc + vc.min() - 2
                     # concatenate all points
-                    ar, ac = np.hstack((np.vstack((vr, vc)), np.vstack((ar, ac))))
-                    # if these pixels are overlapping with another cell, reassign them
+                    ar, ac = np.hstack(
+                        (np.vstack(
+                            (vr, vc)), np.vstack(
+                            (ar, ac))))
+                    # if these pixels are overlapping with another cell,
+                    # reassign them
                     ioverlap = self.cellpix[z][ar, ac] > 0
                     if (~ioverlap).sum() < 8:
                         print("ERROR: cell too small without overlaps, not drawn")
@@ -317,7 +340,8 @@ class MainW_3d(MainW):
                     elif ioverlap.sum() > 0:
                         ar, ac = ar[~ioverlap], ac[~ioverlap]
                         # compute outline of new mask
-                        mask = np.zeros((np.ptp(ar) + 4, np.ptp(ac) + 4), "uint8")
+                        mask = np.zeros(
+                            (np.ptp(ar) + 4, np.ptp(ac) + 4), "uint8")
                         mask[ar - ar.min() + 2, ac - ac.min() + 2] = 1
                         contours = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_NONE)
@@ -343,8 +367,9 @@ class MainW_3d(MainW):
                 ar, ac = np.nonzero(mask)
                 ioverlap = self.cellpix[z + zmin][ar + ymin, ac + xmin] > 0
                 if (~ioverlap).sum() < 5:
-                    print("WARNING: stroke on plane %d not included due to overlaps" %
-                          z)
+                    print(
+                        "WARNING: stroke on plane %d not included due to overlaps" %
+                        z)
                 elif ioverlap.sum() > 0:
                     mask[ar[ioverlap], ac[ioverlap]] = 0
                     ar, ac = ar[~ioverlap], ac[~ioverlap]
@@ -371,17 +396,30 @@ class MainW_3d(MainW):
         self.pOrtho, self.imgOrtho, self.layerOrtho = [], [], []
         for j in range(2):
             self.pOrtho.append(
-                pg.ViewBox(lockAspect=True, name=f"plotOrtho{j}",
-                           border=[100, 100, 100], invertY=True, enableMouse=False))
+                pg.ViewBox(
+                    lockAspect=True,
+                    name=f"plotOrtho{j}",
+                    border=[
+                        100,
+                        100,
+                        100],
+                    invertY=True,
+                    enableMouse=False))
             self.pOrtho[j].setMenuEnabled(False)
 
-            self.imgOrtho.append(pg.ImageItem(viewbox=self.pOrtho[j], parent=self))
+            self.imgOrtho.append(
+                pg.ImageItem(
+                    viewbox=self.pOrtho[j],
+                    parent=self))
             self.imgOrtho[j].autoDownsample = False
 
-            self.layerOrtho.append(pg.ImageItem(viewbox=self.pOrtho[j], parent=self))
+            self.layerOrtho.append(
+                pg.ImageItem(
+                    viewbox=self.pOrtho[j],
+                    parent=self))
             self.layerOrtho[j].setLevels([0., 255.])
 
-            #self.pOrtho[j].scene().contextMenuItem = self.pOrtho[j]
+            # self.pOrtho[j].scene().contextMenuItem = self.pOrtho[j]
             self.pOrtho[j].addItem(self.imgOrtho[j])
             self.pOrtho[j].addItem(self.layerOrtho[j])
             self.pOrtho[j].addItem(self.vLineOrtho[j], ignoreBounds=False)
@@ -405,15 +443,15 @@ class MainW_3d(MainW):
         qGraphicsGridLayout.setRowStretchFactor(0, 2)
         qGraphicsGridLayout.setRowStretchFactor(1, 1)
 
-        #self.p0.linkView(self.p0.YAxis, self.pOrtho[0])
-        #self.p0.linkView(self.p0.XAxis, self.pOrtho[1])
+        # self.p0.linkView(self.p0.YAxis, self.pOrtho[0])
+        # self.p0.linkView(self.p0.XAxis, self.pOrtho[1])
 
         self.pOrtho[0].setYRange(0, self.Lx)
         self.pOrtho[0].setXRange(-self.dz / 3, self.dz * 2 + self.dz / 3)
         self.pOrtho[1].setYRange(-self.dz / 3, self.dz * 2 + self.dz / 3)
         self.pOrtho[1].setXRange(0, self.Ly)
-        #self.pOrtho[0].setLimits(minXRange=self.dz*2+self.dz/3*2)
-        #self.pOrtho[1].setLimits(minYRange=self.dz*2+self.dz/3*2)
+        # self.pOrtho[0].setLimits(minXRange=self.dz*2+self.dz/3*2)
+        # self.pOrtho[1].setLimits(minYRange=self.dz*2+self.dz/3*2)
 
         self.p0.addItem(self.vLine, ignoreBounds=False)
         self.p0.addItem(self.hLine, ignoreBounds=False)
@@ -423,7 +461,7 @@ class MainW_3d(MainW):
         self.win.show()
         self.show()
 
-        #self.p0.linkView(self.p0.XAxis, self.pOrtho[1])
+        # self.p0.linkView(self.p0.XAxis, self.pOrtho[1])
 
     def remove_orthoviews(self):
         self.win.removeItem(self.pOrtho[0])
@@ -451,8 +489,10 @@ class MainW_3d(MainW):
             self.dzedit.setText(str(self.dz))
             self.zaspectedit.setText(str(self.zaspect))
             if self.dz != dzcurrent:
-                self.pOrtho[0].setXRange(-self.dz / 3, self.dz * 2 + self.dz / 3)
-                self.pOrtho[1].setYRange(-self.dz / 3, self.dz * 2 + self.dz / 3)
+                self.pOrtho[0].setXRange(-self.dz / 3,
+                                         self.dz * 2 + self.dz / 3)
+                self.pOrtho[1].setYRange(-self.dz / 3,
+                                         self.dz * 2 + self.dz / 3)
             dztot = min(self.NZ, self.dz * 2)
             y = self.yortho
             x = self.xortho
@@ -474,20 +514,20 @@ class MainW_3d(MainW):
                 for j in range(2):
                     if j == 0:
                         if self.view == 0:
-                            image = self.stack[zmin:zmax, :, x].transpose(1, 0, 2).copy()
+                            image = self.stack[zmin:zmax, :,
+                                               x].transpose(1, 0, 2).copy()
                         else:
-                            image = self.stack_filtered[zmin:zmax, :,
-                                                        x].transpose(1, 0, 2).copy()
+                            image = self.stack_filtered[zmin:zmax, :, x].transpose(
+                                1, 0, 2).copy()
                     else:
-                        image = self.stack[
-                            zmin:zmax,
-                            y, :].copy() if self.view == 0 else self.stack_filtered[zmin:zmax,
-                                                                             y, :].copy()
+                        image = self.stack[zmin:zmax, y, :].copy(
+                        ) if self.view == 0 else self.stack_filtered[zmin:zmax, y, :].copy()
                     if self.nchan == 1:
                         # show single channel
                         image = image[..., 0]
                     if self.color == 0:
-                        self.imgOrtho[j].setImage(image, autoLevels=False, lut=None)
+                        self.imgOrtho[j].setImage(
+                            image, autoLevels=False, lut=None)
                         if self.nchan > 1:
                             levels = np.array([
                                 self.saturation[0][self.currentZ],
@@ -511,17 +551,23 @@ class MainW_3d(MainW):
                                 self.saturation[0][self.currentZ])
                     elif self.color == 4:
                         if image.ndim > 2:
-                            image = image.astype("float32").mean(axis=2).astype("uint8")
-                        self.imgOrtho[j].setImage(image, autoLevels=False, lut=None)
-                        self.imgOrtho[j].setLevels(self.saturation[0][self.currentZ])
+                            image = image.astype("float32").mean(
+                                axis=2).astype("uint8")
+                        self.imgOrtho[j].setImage(
+                            image, autoLevels=False, lut=None)
+                        self.imgOrtho[j].setLevels(
+                            self.saturation[0][self.currentZ])
                     elif self.color == 5:
                         if image.ndim > 2:
-                            image = image.astype("float32").mean(axis=2).astype("uint8")
+                            image = image.astype("float32").mean(
+                                axis=2).astype("uint8")
                         self.imgOrtho[j].setImage(image, autoLevels=False,
                                                   lut=self.cmap[0])
-                        self.imgOrtho[j].setLevels(self.saturation[0][self.currentZ])
+                        self.imgOrtho[j].setLevels(
+                            self.saturation[0][self.currentZ])
                 self.pOrtho[0].setAspectLocked(lock=True, ratio=self.zaspect)
-                self.pOrtho[1].setAspectLocked(lock=True, ratio=1. / self.zaspect)
+                self.pOrtho[1].setAspectLocked(
+                    lock=True, ratio=1. / self.zaspect)
 
             else:
                 image = np.zeros((10, 10), "uint8")
@@ -542,7 +588,8 @@ class MainW_3d(MainW):
                 else:
                     cp = self.cellpix[zmin:zmax, y]
                 self.layer_ortho[j][..., :3] = self.cellcolors[cp, :]
-                self.layer_ortho[j][..., 3] = self.opacity * (cp > 0).astype("uint8")
+                self.layer_ortho[j][..., 3] = self.opacity * \
+                    (cp > 0).astype("uint8")
                 if self.selected > 0:
                     self.layer_ortho[j][cp == self.selected] = np.array(
                         [255, 255, 255, self.opacity])
@@ -553,7 +600,8 @@ class MainW_3d(MainW):
                     op = self.outpix[zmin:zmax, :, x].T
                 else:
                     op = self.outpix[zmin:zmax, y]
-                self.layer_ortho[j][op > 0] = np.array(self.outcolor).astype("uint8")
+                self.layer_ortho[j][op > 0] = np.array(
+                    self.outcolor).astype("uint8")
 
         for j in range(2):
             self.layerOrtho[j].setImage(self.layer_ortho[j])
@@ -567,13 +615,12 @@ class MainW_3d(MainW):
             self.remove_orthoviews()
 
     def plot_clicked(self, event):
-        if event.button()==QtCore.Qt.LeftButton \
-                and not event.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier)\
-                and not self.removing_region:
+        if event.button() == QtCore.Qt.LeftButton and not event.modifiers() & (
+                QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier) and not self.removing_region:
             if event.double():
                 try:
                     self.p0.setYRange(0, self.Ly + self.pr)
-                except:
+                except BaseException:
                     self.p0.setYRange(0, self.Ly)
                 self.p0.setXRange(0, self.Lx)
             elif self.loaded and not self.in_stroke:
@@ -617,8 +664,9 @@ class MainW_3d(MainW):
                 else:
                     nviews = self.ViewDropDown.count() - 1
                     nviews += int(
-                        self.ViewDropDown.model().item(self.ViewDropDown.count() -
-                                                       1).isEnabled())
+                        self.ViewDropDown.model().item(
+                            self.ViewDropDown.count() -
+                            1).isEnabled())
                     if event.key() == QtCore.Qt.Key_X:
                         self.MCheckBox.toggle()
                     if event.key() == QtCore.Qt.Key_Z:
@@ -685,7 +733,7 @@ class MainW_3d(MainW):
         zpos = self.currentZ
         try:
             zpos = int(self.zpos.text())
-        except:
+        except BaseException:
             print("ERROR: zposition is not a number")
         self.currentZ = max(0, min(self.NZ - 1, zpos))
         self.zpos.setText(str(self.currentZ))

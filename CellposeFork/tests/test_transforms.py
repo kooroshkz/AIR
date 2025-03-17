@@ -36,7 +36,11 @@ def test_normalize_img(img_3d):
 
 
 def test_normalize_img_with_lowhigh_and_invert(img_3d):
-    img_norm = normalize_img(img_3d, lowhigh=(img_3d.min() + 1, img_3d.max() - 1))
+    img_norm = normalize_img(
+        img_3d,
+        lowhigh=(
+            img_3d.min() + 1,
+            img_3d.max() - 1))
     assert img_norm.min() < 0 and img_norm.max() > 1
 
     img_norm = normalize_img(img_3d, lowhigh=(img_3d.min(), img_3d.max()))
@@ -71,8 +75,11 @@ def test_normalize_img_exceptions(img_3d):
 
     with pytest.raises(ValueError):
         normalize_img(
-            img_3d, lowhigh=None, tile_norm_blocksize=0, normalize=False, invert=True
-        )
+            img_3d,
+            lowhigh=None,
+            tile_norm_blocksize=0,
+            normalize=False,
+            invert=True)
 
 
 def test_resize(img_2d):

@@ -10,6 +10,7 @@ def test_model_zoo_imports_without_error():
         if "neurips" not in model_name and "transformer" not in model_name:
             model = models.CellposeModel(model_type=model_name)
 
+
 def test_gui_imports_without_error():
     from cellpose import gui
 
@@ -22,7 +23,8 @@ def test_gpu_check():
 
 
 def test_model_dir():
-    import os, pathlib
+    import os
+    import pathlib
     import numpy as np
     os.environ["CELLPOSE_LOCAL_MODELS_PATH"] = os.fspath(
         pathlib.Path.home().joinpath('.cellpose'))

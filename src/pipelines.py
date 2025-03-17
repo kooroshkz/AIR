@@ -16,14 +16,16 @@ from qtpy.QtWidgets import (
 
 from .utils import DropdownPopup
 
+
 class Pipeline():
-    #Pipeline() assumes that all functions which it stores take as input a Nxnxmx3 or Nxnxm numpy image array
-    #N -> any number of images, so you should be able to pass 10 images, and as long as theyre nxm it will output that many images too
+    # Pipeline() assumes that all functions which it stores take as input a Nxnxmx3 or Nxnxm numpy image array
+    # N -> any number of images, so you should be able to pass 10 images, and
+    # as long as theyre nxm it will output that many images too
     def __init__(self) -> None:
         self.pipeline: List[Callable] = []
         self.name: str = ""
 
-    def add_func(self, func : Callable):
+    def add_func(self, func: Callable):
         self.pipeline.append(func)
 
     def __len__(self):
@@ -35,17 +37,18 @@ class Pipeline():
     def __iter__(self):
         return iter(self.pipeline)
 
-    def __contains__(self, func : Callable):
+    def __contains__(self, func: Callable):
         return func in self.pipeline
 
     def __repr__(self):
         return f"pipeline {self.name=}, {self.pipeline=}"
 
-    def __delitem__(self, name : str):
+    def __delitem__(self, name: str):
         for idx, func in enumerate(self):
             if func.__name__ == name:
                 self.pipeline.pop(idx)
-                break #dont delete all the items with the same name
+                break  # dont delete all the items with the same name
+
 
 class WorkflowWidget(QWidget):
     """
@@ -72,7 +75,7 @@ class WorkflowWidget(QWidget):
 
         self.wf_idx = 0
         self.current_workflow: Pipeline = Pipeline()
-        self.workflows: Dict[str, Pipeline] = {} 
+        self.workflows: Dict[str, Pipeline] = {}
 
     def setup_ui(self):
         """Configure the widget's user interface."""
@@ -182,9 +185,13 @@ class WorkflowWidget(QWidget):
         wf_delete_button = QPushButton("delete")
         wf_export_button = QPushButton("export to file")
 
-        wf_button.clicked.connect(partial(self.apply_wf, self.current_workflow.name))
+        wf_button.clicked.connect(
+            partial(
+                self.apply_wf,
+                self.current_workflow.name))
         wf_delete_button.clicked.connect(partial(self.remove_wf, wf_area))
-        wf_export_button.clicked.connect(partial(self.export_wf, self.current_workflow.name))
+        wf_export_button.clicked.connect(
+            partial(self.export_wf, self.current_workflow.name))
 
         wf_area.addWidget(wf_button)
         wf_area.addWidget(wf_delete_button)
@@ -194,7 +201,7 @@ class WorkflowWidget(QWidget):
         self.recording = False
         self.reset()
 
-    def export_wf(self, wf_name : str):
+    def export_wf(self, wf_name: str):
         # code should never reach this point, but for smoother error recovery
         # we need this check
         if wf_name not in self.workflows:
@@ -266,7 +273,11 @@ class WorkflowWidget(QWidget):
                 """)
             lb.setToolTip("Press on pipeline event to delete from pipeline")
 
-            lb.clicked.connect(partial(self.remove_event_wf, event.__name__, lb))
+            lb.clicked.connect(
+                partial(
+                    self.remove_event_wf,
+                    event.__name__,
+                    lb))
 
             self.recording_wf_layout.addWidget(lb)
 
@@ -297,15 +308,17 @@ class WorkflowWidget(QWidget):
             return False
         return True
 
-    def apply_wf(self, wf_name : str):
-        #should never happen, but just for smoother error handling in all cases
+    def apply_wf(self, wf_name: str):
+        # should never happen, but just for smoother error handling in all
+        # cases
         try:
             wf = self.workflows[wf_name]
             for filter_event in wf:
                 self.filter_widget._apply_filter(filter_event)
 
         except KeyError:
-            self.filter_widget.add_to_chat(f"[Error] workflow {wf_name} does not exist")
+            self.filter_widget.add_to_chat(
+                f"[Error] workflow {wf_name} does not exist")
 
     def reset(self):
         """resets the current workflow pipeline"""

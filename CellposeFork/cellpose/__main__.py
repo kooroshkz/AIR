@@ -2,7 +2,11 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import sys, os, glob, pathlib, time
+import sys
+import os
+import glob
+import pathlib
+import time
 import numpy as np
 from natsort import natsorted
 from tqdm import tqdm
@@ -97,7 +101,8 @@ def main():
             except Exception as e:
                 raise ValueError("restore_type invalid")
             if args.train or args.train_size:
-                raise ValueError("restore_type cannot be used with training on CLI yet")
+                raise ValueError(
+                    "restore_type cannot be used with training on CLI yet")
 
         if args.transformer and (restore_type is None):
             default_model = "transformer_cp3"
@@ -110,10 +115,9 @@ def main():
 
         if args.norm_percentile is not None:
             value1, value2 = args.norm_percentile
-            normalize = {'percentile': (float(value1), float(value2))} 
+            normalize = {'percentile': (float(value1), float(value2))}
         else:
             normalize = (not args.no_norm)
-        
 
         model_type = None
         if pretrained_model and not os.path.exists(pretrained_model):
@@ -133,7 +137,8 @@ def main():
                         model_type == "nuclei" or model_type == "cyto3")
 
         if len(args.image_path) > 0 and (args.train or args.train_size):
-            raise ValueError("ERROR: cannot train model with single image input")
+            raise ValueError(
+                "ERROR: cannot train model with single image input")
 
         if not args.train and not args.train_size:
             tic = time.time()
@@ -145,12 +150,15 @@ def main():
                 if os.path.exists(args.image_path):
                     image_names = [args.image_path]
                 else:
-                    raise ValueError(f"ERROR: no file found at {args.image_path}")
+                    raise ValueError(
+                        f"ERROR: no file found at {
+                            args.image_path}")
             nimg = len(image_names)
 
             if args.savedir:
                 if not os.path.exists(args.savedir):
-                    raise FileExistsError("--savedir {args.savedir} does not exist")
+                    raise FileExistsError(
+                        "--savedir {args.savedir} does not exist")
 
             cstr0 = ["GRAY", "RED", "GREEN", "BLUE"]
             cstr1 = ["NONE", "RED", "GREEN", "BLUE"]
@@ -160,8 +168,11 @@ def main():
 
             # handle built-in model exceptions
             if builtin_size and restore_type is None and not args.pretrained_model_ortho:
-                model = models.Cellpose(gpu=gpu, device=device, model_type=model_type,
-                                        backbone=backbone)
+                model = models.Cellpose(
+                    gpu=gpu,
+                    device=device,
+                    model_type=model_type,
+                    backbone=backbone)
             else:
                 builtin_size = False
                 if args.all_channels:
@@ -178,12 +189,14 @@ def main():
                 pretrained_model = None if model_type is not None else pretrained_model
                 if restore_type is None:
                     pretrained_model_ortho = None if args.pretrained_model_ortho is None else args.pretrained_model_ortho
-                    model = models.CellposeModel(gpu=gpu, device=device,
-                                                 pretrained_model=pretrained_model,
-                                                 model_type=model_type,
-                                                 nchan=nchan,
-                                                 backbone=backbone,
-                                                 pretrained_model_ortho=pretrained_model_ortho)
+                    model = models.CellposeModel(
+                        gpu=gpu,
+                        device=device,
+                        pretrained_model=pretrained_model,
+                        model_type=model_type,
+                        nchan=nchan,
+                        backbone=backbone,
+                        pretrained_model_ortho=pretrained_model_ortho)
                 else:
                     model = denoise.CellposeDenoiseModel(
                         gpu=gpu, device=device, pretrained_model=pretrained_model,
@@ -204,10 +217,14 @@ def main():
                         logger.info(
                             ">>>> cannot auto-estimate diameter for image restoration")
                     diameter = model.diam_labels
-                    logger.info(">>>> using diameter %0.3f for all images" % diameter)
+                    logger.info(
+                        ">>>> using diameter %0.3f for all images" %
+                        diameter)
             else:
                 diameter = args.diameter
-                logger.info(">>>> using diameter %0.3f for all images" % diameter)
+                logger.info(
+                    ">>>> using diameter %0.3f for all images" %
+                    diameter)
 
             tqdm_out = utils.TqdmToLogger(logger, level=logging.INFO)
 
@@ -232,35 +249,51 @@ def main():
                 ratio = 1.
                 if restore_type is not None:
                     imgs_dn = out[-1]
-                    ratio = diams / model.dn.diam_mean if "upsample" in restore_type else 1.
+                    ratio = diams / \
+                        model.dn.diam_mean if "upsample" in restore_type else 1.
                     diams = model.dn.diam_mean if "upsample" in restore_type and model.dn.diam_mean > diams else diams
                 else:
                     imgs_dn = None
                 if args.exclude_on_edges:
                     masks = utils.remove_edge_masks(masks)
                 if not args.no_npy:
-                    io.masks_flows_to_seg(image, masks, flows, image_name,
-                                          imgs_restore=imgs_dn, channels=channels,
-                                          diams=diams, restore_type=restore_type,
-                                          ratio=1.)
+                    io.masks_flows_to_seg(
+                        image,
+                        masks,
+                        flows,
+                        image_name,
+                        imgs_restore=imgs_dn,
+                        channels=channels,
+                        diams=diams,
+                        restore_type=restore_type,
+                        ratio=1.)
                 if saving_something:
                     suffix = "_cp_masks"
-                    if args.output_name is not None: 
+                    if args.output_name is not None:
                         # (1) If `savedir` is not defined, then must have a non-zero `suffix`
                         if args.savedir is None and len(args.output_name) > 0:
                             suffix = args.output_name
                         elif args.savedir is not None and not os.path.samefile(args.savedir, args.dir):
-                            # (2) If `savedir` is defined, and different from `dir` then                              
-                            # takes the value passed as a param. (which can be empty string)
+                            # (2) If `savedir` is defined, and different from `dir` then
+                            # takes the value passed as a param. (which can be
+                            # empty string)
                             suffix = args.output_name
 
-                    io.save_masks(image, masks, flows, image_name,
-                                  suffix=suffix, png=args.save_png,
-                                  tif=args.save_tif, save_flows=args.save_flows,
-                                  save_outlines=args.save_outlines,
-                                  dir_above=args.dir_above, savedir=args.savedir,
-                                  save_txt=args.save_txt, in_folders=args.in_folders,
-                                  save_mpl=args.save_mpl)
+                    io.save_masks(
+                        image,
+                        masks,
+                        flows,
+                        image_name,
+                        suffix=suffix,
+                        png=args.save_png,
+                        tif=args.save_tif,
+                        save_flows=args.save_flows,
+                        save_outlines=args.save_outlines,
+                        dir_above=args.dir_above,
+                        savedir=args.savedir,
+                        save_txt=args.save_txt,
+                        in_folders=args.in_folders,
+                        save_mpl=args.save_mpl)
                 if args.save_rois:
                     io.save_rois(masks, image_name)
             logger.info(">>>> completed in %0.3f sec" % (time.time() - tic))
@@ -289,7 +322,8 @@ def main():
 
             # training with all channels
             if args.all_channels:
-                img = images[0] if images is not None else io.imread(image_names[0])
+                img = images[0] if images is not None else io.imread(
+                    image_names[0])
                 if img.ndim == 3:
                     nchan = min(img.shape)
                 elif img.ndim == 2:
@@ -309,12 +343,15 @@ def main():
                 logger.info(">>>> training from scratch")
             if args.train:
                 logger.info(
-                    ">>>> during training rescaling images to fixed diameter of %0.1f pixels"
-                    % args.diam_mean)
+                    ">>>> during training rescaling images to fixed diameter of %0.1f pixels" %
+                    args.diam_mean)
 
             # initialize model
             model = models.CellposeModel(
-                device=device, model_type=model_type, diam_mean=szmean, nchan=nchan,
+                device=device,
+                model_type=model_type,
+                diam_mean=szmean,
+                nchan=nchan,
                 pretrained_model=pretrained_model if model_type is None else None,
                 backbone=backbone)
 
@@ -335,7 +372,9 @@ def main():
                     save_path=os.path.realpath(args.dir), save_every=args.save_every,
                     model_name=args.model_name_out)[0]
                 model.pretrained_model = cpmodel_path
-                logger.info(">>>> model trained and saved to %s" % cpmodel_path)
+                logger.info(
+                    ">>>> model trained and saved to %s" %
+                    cpmodel_path)
 
             # train size model
             if args.train_size:
@@ -354,26 +393,21 @@ def main():
                     batch_size=args.batch_size)
                 if test_images is not None:
                     test_masks = [lbl[0] for lbl in test_labels
-                                 ] if test_labels is not None else test_labels
+                                  ] if test_labels is not None else test_labels
                     predicted_diams, diams_style = sz_model.eval(
                         test_images, channels=channels)
-                    ccs = np.corrcoef(
-                        diams_style,
-                        np.array([utils.diameters(lbl)[0] for lbl in test_masks]))[0, 1]
-                    cc = np.corrcoef(
-                        predicted_diams,
-                        np.array([utils.diameters(lbl)[0] for lbl in test_masks]))[0, 1]
+                    ccs = np.corrcoef(diams_style, np.array(
+                        [utils.diameters(lbl)[0] for lbl in test_masks]))[0, 1]
+                    cc = np.corrcoef(predicted_diams, np.array(
+                        [utils.diameters(lbl)[0] for lbl in test_masks]))[0, 1]
                     logger.info(
                         "style test correlation: %0.4f; final test correlation: %0.4f" %
                         (ccs, cc))
                     np.save(
                         os.path.join(
-                            args.test_dir,
-                            "%s_predicted_diams.npy" % os.path.split(cpmodel_path)[1]),
-                        {
-                            "predicted_diams": predicted_diams,
-                            "diams_style": diams_style
-                        })
+                            args.test_dir, "%s_predicted_diams.npy" %
+                            os.path.split(cpmodel_path)[1]), {
+                            "predicted_diams": predicted_diams, "diams_style": diams_style})
 
 
 if __name__ == "__main__":

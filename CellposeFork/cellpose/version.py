@@ -13,7 +13,7 @@ except PackageNotFoundError:
     version = "unknown"
 
 version_str = f"""
-cellpose version: \t{version} 
-platform:       \t{sys.platform} 
-python version: \t{python_version()} 
+cellpose version: \t{version}
+platform:       \t{sys.platform}
+python version: \t{python_version()}
 torch version:  \t{torch.__version__}"""

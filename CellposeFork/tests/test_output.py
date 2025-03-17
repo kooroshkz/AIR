@@ -1,12 +1,13 @@
 from cellpose import io, models, metrics, plot, utils
 from pathlib import Path
 from subprocess import check_output, STDOUT
-import os, shutil
+import os
+import shutil
 import numpy as np
 try:
     import matplotlib.pyplot as plt
     MATPLOTLIB = True
-except:
+except BaseException:
     MATPLOTLIB = False
 
 r_tol, a_tol = 1e-2, 1e-2
@@ -27,6 +28,7 @@ def clear_output(data_dir, image_names):
         if os.path.exists(output):
             os.remove(output)
 
+
 def test_class_2D(data_dir, image_names):
     clear_output(data_dir, image_names)
     image_name = "rgb_2D.png"
@@ -36,9 +38,11 @@ def test_class_2D(data_dir, image_names):
     chan2 = [0]
     for m, model_type in enumerate(model_types):
         model = models.Cellpose(model_type=model_type)
-        masks, flows, _, _ = model.eval(img, diameter=0, cellprob_threshold=0,
-                                        channels=[chan[m], chan2[m]], resample=False)
-        io.imsave(str(data_dir.joinpath("2D").joinpath("rgb_2D_cp_masks.png")), masks)
+        masks, flows, _, _ = model.eval(
+            img, diameter=0, cellprob_threshold=0, channels=[
+                chan[m], chan2[m]], resample=False)
+        io.imsave(str(data_dir.joinpath("2D").joinpath(
+            "rgb_2D_cp_masks.png")), masks)
         compare_masks(data_dir, [image_name], "2D", model_type)
         clear_output(data_dir, image_names)
         if MATPLOTLIB:
@@ -50,14 +54,14 @@ def test_class_2D(data_dir, image_names):
 def test_cyto2_to_seg(data_dir, image_names):
     clear_output(data_dir, image_names)
     image_names = ["rgb_2D.png", "rgb_2D_tif.tif"]
-    file_names = [
-        str(data_dir.joinpath("2D").joinpath(image_name)) for image_name in image_names
-    ]
+    file_names = [str(data_dir.joinpath("2D").joinpath(image_name))
+                  for image_name in image_names]
     imgs = [io.imread(file_name) for file_name in file_names]
     model_type = "cyto2"
     model = models.Cellpose(model_type=model_type)
     channels = [2, 1]
-    masks, flows, styles, diams = model.eval(imgs, diameter=30, channels=channels)
+    masks, flows, styles, diams = model.eval(
+        imgs, diameter=30, channels=channels)
     io.masks_flows_to_seg(imgs, masks, flows, file_names, diams=diams)
 
 
@@ -69,9 +73,10 @@ def test_class_3D(data_dir, image_names):
     chan2 = [0]
     for m, model_type in enumerate(model_types):
         model = models.Cellpose(model_type="nuclei")
-        masks = model.eval(img, do_3D=True, diameter=25, 
+        masks = model.eval(img, do_3D=True, diameter=25,
                            channels=[chan[m], chan2[m]], resample=True)[0]
-        io.imsave(str(data_dir.joinpath("3D").joinpath("rgb_3D_cp_masks.tif")), masks)
+        io.imsave(str(data_dir.joinpath("3D").joinpath(
+            "rgb_3D_cp_masks.tif")), masks)
         compare_masks(data_dir, ["rgb_3D.tif"], "3D", model_type)
         clear_output(data_dir, image_names)
 
@@ -110,6 +115,7 @@ def test_cli_3D(data_dir, image_names):
         compare_masks(data_dir, image_names, "3D", model_type)
         clear_output(data_dir, image_names)
 
+
 def test_outlines_list(data_dir, image_names):
     """ test both single and multithreaded by comparing them"""
     clear_output(data_dir, image_names)
@@ -127,7 +133,8 @@ def test_outlines_list(data_dir, image_names):
 
     assert len(outlines_single) == len(outlines_multi)
 
-    # Check that the outlines are the same, but not necessarily in the same order
+    # Check that the outlines are the same, but not necessarily in the same
+    # order
     outlines_matched = [False] * len(outlines_single)
     for i, outline_single in enumerate(outlines_single):
         for j, outline_multi in enumerate(outlines_multi):
@@ -172,13 +179,14 @@ def compare_masks(data_dir, image_names, runtype, model_type):
                 print("masks", np.unique(masks_test), np.unique(masks_true),
                       output_test, output_true)
                 thresholds = [0.5, 0.75, 0.9]
-                ap = metrics.average_precision(masks_true, masks_test, 
+                ap = metrics.average_precision(masks_true, masks_test,
                                                threshold=thresholds)[0]
                 print("average precision of ", ap)
-                ap_precision = np.allclose(ap, np.ones(len(thresholds)), 
+                ap_precision = np.allclose(ap, np.ones(len(thresholds)),
                                            rtol=r_tol, atol=a_tol)
 
-                matching_pix = np.logical_and(masks_test > 0, masks_true > 0).mean()
+                matching_pix = np.logical_and(
+                    masks_test > 0, masks_true > 0).mean()
                 all_pix = (masks_test > 0).mean()
                 pix_precision = np.allclose(all_pix, matching_pix, rtol=r_tol,
                                             atol=a_tol)

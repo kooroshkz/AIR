@@ -2,7 +2,14 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 
-import os, sys, time, shutil, tempfile, datetime, pathlib, subprocess
+import os
+import sys
+import time
+import shutil
+import tempfile
+import datetime
+import pathlib
+import subprocess
 import logging
 import numpy as np
 from tqdm import trange, tqdm
@@ -24,7 +31,7 @@ tqdm_out = utils.TqdmToLogger(core_logger, level=logging.INFO)
 
 
 def use_gpu(gpu_number=0, use_torch=True):
-    """ 
+    """
     Check if GPU is available for use.
 
     Args:
@@ -55,18 +62,19 @@ def _use_gpu_torch(gpu_number=0):
     """
     try:
         device = torch.device("cuda:" + str(gpu_number))
-        _ = torch.zeros((1,1)).to(device)
+        _ = torch.zeros((1, 1)).to(device)
         core_logger.info("** TORCH CUDA version installed and working. **")
         return True
-    except:
+    except BaseException:
         pass
     try:
         device = torch.device('mps:' + str(gpu_number))
-        _ = torch.zeros((1,1)).to(device)
+        _ = torch.zeros((1, 1)).to(device)
         core_logger.info('** TORCH MPS version installed and working. **')
         return True
-    except:
-        core_logger.info('Neither TORCH CUDA nor MPS version not installed/working.')
+    except BaseException:
+        core_logger.info(
+            'Neither TORCH CUDA nor MPS version not installed/working.')
         return False
 
 
@@ -84,7 +92,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
     """
 
     if isinstance(device, str):
-        if device != "mps" or not(gpu and torch.backends.mps.is_available()):
+        if device != "mps" or not (gpu and torch.backends.mps.is_available()):
             device = int(device)
     if gpu and use_gpu(use_torch=True):
         try:
@@ -93,7 +101,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
                 core_logger.info(">>>> using GPU (CUDA)")
                 gpu = True
                 cpu = False
-        except:
+        except BaseException:
             gpu = False
             cpu = True
         try:
@@ -102,7 +110,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
                 core_logger.info(">>>> using GPU (MPS)")
                 gpu = True
                 cpu = False
-        except:
+        except BaseException:
             gpu = False
             cpu = True
     else:
@@ -110,7 +118,7 @@ def assign_device(use_torch=True, gpu=False, device=0):
         core_logger.info('>>>> using CPU')
         gpu = False
         cpu = True
-    
+
     if cpu:
         device = torch.device("cpu")
         core_logger.info(">>>> using CPU")
@@ -194,11 +202,17 @@ def _forward(net, x):
     return y, style
 
 
-def run_net(net, imgi, batch_size=8, augment=False, tile_overlap=0.1, bsize=224,
-            rsz=None):
-    """ 
+def run_net(
+        net,
+        imgi,
+        batch_size=8,
+        augment=False,
+        tile_overlap=0.1,
+        bsize=224,
+        rsz=None):
+    """
     Run network on stack of images.
-    
+
     (faster if augment is False)
 
     Args:
@@ -212,12 +226,12 @@ def run_net(net, imgi, batch_size=8, augment=False, tile_overlap=0.1, bsize=224,
 
     Returns:
         Tuple[numpy.ndarray, numpy.ndarray]: outputs of network y and style. If tiled `y` is averaged in tile overlaps. Size of [Ly x Lx x 3] or [Lz x Ly x Lx x 3].
-            y[...,0] is Y flow; y[...,1] is X flow; y[...,2] is cell probability. 
+            y[...,0] is Y flow; y[...,1] is X flow; y[...,2] is cell probability.
             style is a 1D array of size 256 summarizing the style of the image, if tiled `style` is averaged over tiles.
     """
     # run network
     nout = net.nout
-    Lz, Ly0, Lx0, nchan = imgi.shape 
+    Lz, Ly0, Lx0, nchan = imgi.shape
     if rsz is not None:
         if not isinstance(rsz, list) and not isinstance(rsz, np.ndarray):
             rsz = [rsz, rsz]
@@ -232,38 +246,42 @@ def run_net(net, imgi, batch_size=8, augment=False, tile_overlap=0.1, bsize=224,
         nx = max(2, int(np.ceil(2. * Lx / bsize)))
         ly, lx = bsize, bsize
     else:
-        ny = 1 if Ly <= bsize else int(np.ceil((1. + 2 * tile_overlap) * Ly / bsize))
-        nx = 1 if Lx <= bsize else int(np.ceil((1. + 2 * tile_overlap) * Lx / bsize))
+        ny = 1 if Ly <= bsize else int(
+            np.ceil((1. + 2 * tile_overlap) * Ly / bsize))
+        nx = 1 if Lx <= bsize else int(
+            np.ceil((1. + 2 * tile_overlap) * Lx / bsize))
         ly, lx = min(bsize, Ly), min(bsize, Lx)
     yf = np.zeros((Lz, nout, Ly, Lx), "float32")
     styles = np.zeros((Lz, 256), "float32")
-    
+
     # run multiple slices at the same time
     ntiles = ny * nx
-    nimgs = max(1, batch_size // ntiles) # number of imgs to run in the same batch
+    # number of imgs to run in the same batch
+    nimgs = max(1, batch_size // ntiles)
     niter = int(np.ceil(Lz / nimgs))
-    ziterator = (trange(niter, file=tqdm_out, mininterval=30) 
-                    if niter > 10 or Lz > 1 else range(niter))
+    ziterator = (trange(niter, file=tqdm_out, mininterval=30)
+                 if niter > 10 or Lz > 1 else range(niter))
     for k in ziterator:
         inds = np.arange(k * nimgs, min(Lz, (k + 1) * nimgs))
         IMGa = np.zeros((ntiles * len(inds), nchan, ly, lx), "float32")
         for i, b in enumerate(inds):
             # pad image for net so Ly and Lx are divisible by 4
-            imgb = transforms.resize_image(imgi[b], rsz=rsz) if rsz is not None else imgi[b].copy()
-            imgb = np.pad(imgb.transpose(2,0,1), pads, mode="constant")
+            imgb = transforms.resize_image(
+                imgi[b], rsz=rsz) if rsz is not None else imgi[b].copy()
+            imgb = np.pad(imgb.transpose(2, 0, 1), pads, mode="constant")
             IMG, ysub, xsub, Ly, Lx = transforms.make_tiles(
                 imgb, bsize=bsize, augment=augment,
                 tile_overlap=tile_overlap)
-            IMGa[i * ntiles : (i+1) * ntiles] = np.reshape(IMG, 
-                                            (ny * nx, nchan, ly, lx))
-        
+            IMGa[i * ntiles: (i + 1) * ntiles] = np.reshape(IMG,
+                                                            (ny * nx, nchan, ly, lx))
+
         ya = np.zeros((IMGa.shape[0], nout, ly, lx), "float32")
         stylea = np.zeros((IMGa.shape[0], 256), "float32")
         for j in range(0, IMGa.shape[0], batch_size):
             bslc = slice(j, min(j + batch_size, IMGa.shape[0]))
             ya[bslc], stylea[bslc] = _forward(net, IMGa[bslc])
         for i, b in enumerate(inds):
-            y = ya[i * ntiles : (i + 1) * ntiles]
+            y = ya[i * ntiles: (i + 1) * ntiles]
             if augment:
                 y = np.reshape(y, (ny, nx, 3, ly, lx))
                 y = transforms.unaugment_tiles(y)
@@ -274,17 +292,17 @@ def run_net(net, imgi, batch_size=8, augment=False, tile_overlap=0.1, bsize=224,
             stylei /= (stylei**2).sum()**0.5
             styles[b] = stylei
     # slices from padding
-    yf = yf[:, :, ypad1 : Ly-ypad2, xpad1 : Lx-xpad2]
-    yf = yf.transpose(0,2,3,1)   
+    yf = yf[:, :, ypad1: Ly - ypad2, xpad1: Lx - xpad2]
+    yf = yf.transpose(0, 2, 3, 1)
     return yf, np.array(styles)
 
 
 def run_3D(net, imgs, batch_size=8, augment=False,
            tile_overlap=0.1, bsize=224, net_ortho=None,
            progress=None):
-    """ 
+    """
     Run network on image z-stack.
-    
+
     (faster if augment is False)
 
     Args:
@@ -300,7 +318,7 @@ def run_3D(net, imgs, batch_size=8, augment=False,
 
     Returns:
         Tuple[numpy.ndarray, numpy.ndarray]: outputs of network y and style. If tiled `y` is averaged in tile overlaps. Size of [Ly x Lx x 3] or [Lz x Ly x Lx x 3].
-            y[...,0] is Z flow; y[...,1] is Y flow; y[...,2] is X flow; y[...,3] is cell probability. 
+            y[...,0] is Z flow; y[...,1] is Y flow; y[...,2] is X flow; y[...,3] is cell probability.
             style is a 1D array of size 256 summarizing the style of the image, if tiled `style` is averaged over tiles.
     """
     sstr = ["YX", "ZY", "ZX"]
@@ -309,23 +327,24 @@ def run_3D(net, imgs, batch_size=8, augment=False,
     cp = [(1, 2), (0, 2), (0, 1)]
     cpy = [(0, 1), (0, 1), (0, 1)]
     shape = imgs.shape[:-1]
-    #cellprob = np.zeros(shape, "float32")
+    # cellprob = np.zeros(shape, "float32")
     yf = np.zeros((*shape, 4), "float32")
     for p in range(3):
         xsl = imgs.transpose(pm[p])
         # per image
-        core_logger.info("running %s: %d planes of size (%d, %d)" %
-                         (sstr[p], shape[pm[p][0]], shape[pm[p][1]], shape[pm[p][2]]))
-        y, style = run_net(net if p==0 or net_ortho is None else net_ortho, 
-                           xsl, batch_size=batch_size, augment=augment, 
-                           bsize=bsize, tile_overlap=tile_overlap, 
+        core_logger.info("running %s: %d planes of size (%d, %d)" % (
+            sstr[p], shape[pm[p][0]], shape[pm[p][1]], shape[pm[p][2]]))
+        y, style = run_net(net if p == 0 or net_ortho is None else net_ortho,
+                           xsl, batch_size=batch_size, augment=augment,
+                           bsize=bsize, tile_overlap=tile_overlap,
                            rsz=None)
         yf[..., -1] += y[..., -1].transpose(ipm[p])
         for j in range(2):
             yf[..., cp[p][j]] += y[..., cpy[p][j]].transpose(ipm[p])
-        y = None; del y
-    
+        y = None
+        del y
+
         if progress is not None:
             progress.setValue(25 + 15 * p)
-    
+
     return yf, style

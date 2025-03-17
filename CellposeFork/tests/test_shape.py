@@ -1,14 +1,17 @@
 from cellpose import io, models, metrics, plot
 from pathlib import Path
 from subprocess import check_output, STDOUT
-import os, shutil
+import os
+import shutil
 import numpy as np
 
 
 def test_shape_2D():
     img = np.zeros((224, 1, 224))
     model = models.Cellpose(model_type='cyto3')
-    masks, flows, _, _ = model.eval(img, diameter=30, channels=[0, 0], channel_axis=1)
+    masks, flows, _, _ = model.eval(
+        img, diameter=30, channels=[
+            0, 0], channel_axis=1)
     assert masks.shape == (224, 224)
 
 
@@ -31,5 +34,7 @@ def test_shape_stitch():
 def test_shape_2D_2chan():
     img = np.zeros((224, 3, 224))
     model = models.Cellpose(model_type='cyto3')
-    masks, flows, _, _ = model.eval(img, diameter=30, channels=[2, 1], channel_axis=1)
+    masks, flows, _, _ = model.eval(
+        img, diameter=30, channels=[
+            2, 1], channel_axis=1)
     assert masks.shape == (224, 224)

@@ -1,5 +1,7 @@
 import pytest
-import os, sys, shutil
+import os
+import sys
+import shutil
 from cellpose import utils
 
 from pathlib import Path
@@ -8,7 +10,11 @@ from pathlib import Path
 @pytest.fixture()
 def image_names():
     image_names = [
-        "gray_2D.png", "rgb_2D.png", "rgb_2D_tif.tif", "gray_3D.tif", "rgb_3D.tif",
+        "gray_2D.png",
+        "rgb_2D.png",
+        "rgb_2D_tif.tif",
+        "gray_3D.tif",
+        "rgb_3D.tif",
     ]
     return image_names
 
@@ -23,7 +29,7 @@ def data_dir(image_names):
     data_dir_2D.mkdir(exist_ok=True)
     data_dir_3D = data_dir.joinpath("3D")
     data_dir_3D.mkdir(exist_ok=True)
-    
+
     for i, image_name in enumerate(image_names):
         url = "https://www.cellpose.org/static/data/" + image_name
         if i < 3:
@@ -49,7 +55,7 @@ def data_dir(image_names):
         mask_file = name + "_cp_masks" + ext
         if os.path.exists(mask_file):
             os.remove(mask_file)
-        if i==1 or i==4:
+        if i == 1 or i == 4:
             cached_mask_files = [
                 name + "_cyto_masks" + ext, name + "_nuclei_masks" + ext
             ]
@@ -60,7 +66,8 @@ def data_dir(image_names):
                 cached_mask_file)[-1]
             if not os.path.exists(cached_mask_file):
                 print(cached_mask_file)
-                utils.download_url_to_file(url, cached_mask_file, progress=True)
+                utils.download_url_to_file(
+                    url, cached_mask_file, progress=True)
             if i < 2 and c == 0:
                 shutil.copyfile(
                     cached_mask_file,

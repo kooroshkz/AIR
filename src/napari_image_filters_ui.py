@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QPushButton, QDialog
 )
 
+
 class ImageFiltersUI(QDialog):
     def __init__(self, filter_buttons: List[Tuple[str, Callable]]):
         super().__init__()

@@ -5,6 +5,7 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
+
 class CellposeLaunchPoint(QWidget):
     """
     Widget for launching a fork of Cellpose gui system
@@ -16,7 +17,8 @@ class CellposeLaunchPoint(QWidget):
         self.viewer = viewer
         self.filter_widget = filter_widget
         self.launch_btn = QPushButton("Launch CellPipe")  # the final stage
-        self.launch_btn.setToolTip("Launch a modified version of the Cellpose UI system\nUsing this, you can finalize your pipeline with a variety of segmentation models\nYou can also train your own model in a human-feedback loop")
+        self.launch_btn.setToolTip(
+            "Launch a modified version of the Cellpose UI system\nUsing this, you can finalize your pipeline with a variety of segmentation models\nYou can also train your own model in a human-feedback loop")
 
         self.setup_ui()
 
