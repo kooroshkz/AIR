@@ -168,6 +168,7 @@ exports
 images
 
 CellposeFork/images
+CellposeFork/cellpose/logo
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
