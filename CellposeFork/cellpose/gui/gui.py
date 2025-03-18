@@ -239,7 +239,7 @@ class MainW(QMainWindow):
                            border: black solid 1px
                            }"""
         self.loaded = False
-        #true if the current stack is the result of a pipeline
+        # true if the current stack is the result of a pipeline
         self.loaded_pl_stack = False
 
         # ---- MAIN WIDGET LAYOUT ---- #
@@ -976,7 +976,7 @@ class MainW(QMainWindow):
         self.pipelineInfoBox.setLayout(self.pipelineInfoL)
 
         default_msg = "No pipeline loaded"
-        self.pl_name =  QLabel(default_msg)
+        self.pl_name = QLabel(default_msg)
         self.pl_funcs_label = QListWidget()
         self.pipelineInfoL.addRow("Name: ", self.pl_name)
         self.pipelineInfoL.addRow("Functions", self.pl_funcs_label)
@@ -988,19 +988,21 @@ class MainW(QMainWindow):
         self.pipelineMenu.setLayout(self.pipelineMenuL)
 
         self.run_pipeline_btn = QPushButton("Run pipeline")
-        self.run_pipeline_btn.setToolTip("run the current pipeline on the current image layer") 
+        self.run_pipeline_btn.setToolTip(
+            "run the current pipeline on the current image layer")
         self.run_pipeline_btn.clicked.connect(self.run_pipeline)
 
         self.set_pipeline_model_btn = QPushButton("Set pipeline model")
-        self.set_pipeline_model_btn.setToolTip("set the current pipelines final preprocessing model to the current model configuration") 
+        self.set_pipeline_model_btn.setToolTip(
+            "set the current pipelines final preprocessing model to the current model configuration")
 
         self.pipelineMenuL.addWidget(self.run_pipeline_btn)
         self.pipelineMenuL.addWidget(self.set_pipeline_model_btn)
 
         # the actual pipeline object containing all the necessary context for running pipelines
-        #loaded with self.import_pipeline
+        # loaded with self.import_pipeline
         self.pipeline = None
-        
+
         # dont render the pipeline info until a pipeline is actually loaded
         # self.l1.addWidget(self.pipelineInfoBox)
 
@@ -1011,8 +1013,8 @@ class MainW(QMainWindow):
             try:
                 from src.pipelines import Pipeline
                 with open(file_path, 'rb') as fp:
-                    
-                    #remove the error label from a previous attempt
+
+                    # remove the error label from a previous attempt
                     err_label = self.pipelineBoxL.itemAt(1)
                     if err_label:
                         widget = err_label.widget()
@@ -1023,12 +1025,15 @@ class MainW(QMainWindow):
                     new_pipeline = pickle.load(fp)
                     if not isinstance(new_pipeline, Pipeline):
                         print("[Error] not a pipeline")
-                        self.pipelineBoxL.addWidget(QLabel("Not a valid pipeline file"))
+                        self.pipelineBoxL.addWidget(
+                            QLabel("Not a valid pipeline file"))
                     else:
                         self.pipeline = new_pipeline
-                        module = pg.importlib.import_module("src.napari_image_filters")
-                        #bootstrap the actual subroutine
-                        #functions are stored as in the file they were saved in
+                        module = pg.importlib.import_module(
+                            "src.napari_image_filters")
+                        # bootstrap the actual subroutine
+                        # functions are stored as in the file they were saved
+                        # in
                         for i, f in enumerate(self.pipeline):
                             func = getattr(module, f.__name__)
                             self.pipeline[i] = func
@@ -1055,7 +1060,7 @@ class MainW(QMainWindow):
         if self.pipeline is None:
             return
         if self.loaded_pl_stack is False:
-            curr_img = self.stack.copy()[0] #stack adds a dimension
+            curr_img = self.stack.copy()[0]  # stack adds a dimension
             self.pipeline.stack_before = curr_img
             if curr_img.shape[0] == 1:
                 curr_img = curr_img[0]
@@ -1065,15 +1070,19 @@ class MainW(QMainWindow):
             io._initialize_images(self, curr_img, load_3D=self.load_3D)
             self.enable_buttons()
             self.run_pipeline_btn.setText("Revert Pipeline")
-            self.run_pipeline_btn.setToolTip("set the current image back to its pre-pipeline state") 
-            self.loaded_pl_stack = True 
+            self.run_pipeline_btn.setToolTip(
+                "set the current image back to its pre-pipeline state")
+            self.loaded_pl_stack = True
         else:
-            io._initialize_images(self, self.pipeline.stack_before, load_3D=self.load_3D)
+            io._initialize_images(
+                self,
+                self.pipeline.stack_before,
+                load_3D=self.load_3D)
             self.enable_buttons()
             self.run_pipeline_btn.setText("Run Pipeline")
-            self.run_pipeline_btn.setToolTip("run the current pipeline on the current image layer") 
+            self.run_pipeline_btn.setToolTip(
+                "run the current pipeline on the current image layer")
             self.loaded_pl_stack = False
-
 
     def level_change(self, r):
         r = ["red", "green", "blue"].index(r)
