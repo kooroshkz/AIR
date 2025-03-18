@@ -25,9 +25,10 @@ class Pipeline():
     def __init__(self) -> None:
         self.pipeline: List[Callable] = []
         self.name: str = ""
-        #in cellpose theyre called stack so its called stack here for consistency
-        self.stack_before : np.ndarray | None = None
-        self.stack_after : np.ndarray | None = None
+        # in cellpose theyre called stack so its called stack here for
+        # consistency
+        self.stack_before: np.ndarray | None = None
+        self.stack_after: np.ndarray | None = None
 
     def add_func(self, func: Callable):
         self.pipeline.append(func)
@@ -38,7 +39,7 @@ class Pipeline():
     def __getitem__(self, idx):
         return self.pipeline[idx]
 
-    def __setitem__(self, idx : int, func: Callable):
+    def __setitem__(self, idx: int, func: Callable):
         self.pipeline[idx] = func
 
     def __iter__(self):
