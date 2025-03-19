@@ -938,12 +938,13 @@ class MainW(QMainWindow):
         self.pl_model_menu.setFont(self.boldfont)
         self.pl_model_menuL = QVBoxLayout()
         self.pl_model_menu.setLayout(self.pl_model_menuL)
-        
+
         self.ml_label = QLabel()
         self.ml_label.setText(f"Current model: {self.current_model}")
         self.pl_model_menuL.addWidget(self.ml_label)
         self.save_ml = QPushButton("set model as pipeline model")
-        self.save_ml.setToolTip("Save this model to the pipeline\nbecause models only add segmentation patches on top of your current image, it is not possible to chain models")
+        self.save_ml.setToolTip(
+            "Save this model to the pipeline\nbecause models only add segmentation patches on top of your current image, it is not possible to chain models")
         self.save_ml.clicked.connect(self.save_ml_to_pipeline)
         self.pl_model_menuL.addWidget(self.save_ml)
         self.l0.addWidget(self.pl_model_menu)
@@ -1067,7 +1068,8 @@ class MainW(QMainWindow):
         for i, func in enumerate(self.pipeline):
             self.pl_funcs_label.addItem(f"{i + 1}. {func.__name__}")
         if self.pipeline.segModel is not None:
-            self.pl_funcs_label.addItem(f"{len(self.pipeline) + 1}. Model: {self.pipeline.segModel.__name__()}")
+            self.pl_funcs_label.addItem(
+                f"{len(self.pipeline) + 1}. Model: {self.pipeline.segModel.__name__()}")
 
         self.l1.addWidget(self.pipelineInfoBox)
         self.l1.addWidget(self.pipelineMenu)
@@ -1085,7 +1087,8 @@ class MainW(QMainWindow):
                 curr_img = func(curr_img)
             io._initialize_images(self, curr_img, load_3D=self.load_3D)
             if self.pipeline.segModel is not None:
-                self.compute_segmentation(model_name = self.pipeline.segModel.__name__)
+                self.compute_segmentation(
+                    model_name=self.pipeline.segModel.__name__)
 
             self.pipeline.stack_after = curr_img
             self.enable_buttons()
@@ -1106,7 +1109,8 @@ class MainW(QMainWindow):
 
     def save_ml_to_pipeline(self):
         try:
-            last_wdgt = self.pl_model_menuL.itemAt(self.pl_model_menuL.count() - 1).widget()
+            last_wdgt = self.pl_model_menuL.itemAt(
+                self.pl_model_menuL.count() - 1).widget()
             if isinstance(last_wdgt, QCollapsible):
                 self.pl_model_menuL.removeWidget(last_wdgt)
                 last_wdgt.deleteLater()
@@ -1135,7 +1139,9 @@ class MainW(QMainWindow):
     @current_model.setter
     def current_model(self, name):
         self.__dict__["current_model"] = name
-        self.ml_label.setText(f"Current model: {self.__dict__["current_model"]}")
+        self.ml_label.setText(
+            f"Current model: {
+                self.__dict__["current_model"]}")
 
     def level_change(self, r):
         r = ["red", "green", "blue"].index(r)

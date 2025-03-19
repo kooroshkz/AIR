@@ -785,7 +785,7 @@ class CellposeModel():
             models_logger.info("masks created in %2.2fs" % (flow_time))
 
         return masks
-    
+
     def __name__(self):
         return self.model_type
 

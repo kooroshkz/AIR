@@ -35,13 +35,12 @@ class Pipeline():
     def add_func(self, func: Callable):
         self.pipeline.append(func)
 
-
     @property
     def segModel(self):
         return self._segModel
 
     @segModel.setter
-    def segModel(self, model : Cellpose | CellposeModel):
+    def segModel(self, model: Cellpose | CellposeModel):
         self._segModel = model
 
     def __len__(self):
