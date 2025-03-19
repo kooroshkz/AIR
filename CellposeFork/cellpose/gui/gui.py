@@ -25,7 +25,7 @@ from .. import models, core, dynamics, version, denoise, train
 from ..utils import download_url_to_file, masks_to_outlines, diameters
 from ..io import get_image_files, imsave, imread
 from ..transforms import resize_image, normalize99, normalize99_tile, smooth_sharpen_img
-from ..models import normalize_default
+from ..models import Cellpose, CellposeModel, normalize_default
 from ..plot import disk
 
 
@@ -933,6 +933,22 @@ class MainW(QMainWindow):
         self.filtBoxG.addWidget(self.invert_cb, b0, 3, 1, 3)
 
         b += 1
+        # --- pipeline menu for adding models --- #
+        self.pl_model_menu = QGroupBox("Pipeline Menu")
+        self.pl_model_menu.setFont(self.boldfont)
+        self.pl_model_menuL = QVBoxLayout()
+        self.pl_model_menu.setLayout(self.pl_model_menuL)
+        
+        self.ml_label = QLabel()
+        self.ml_label.setText(f"Current model: {self.current_model}")
+        self.pl_model_menuL.addWidget(self.ml_label)
+        self.save_ml = QPushButton("set model as pipeline model")
+        self.save_ml.setToolTip("Save this model to the pipeline\nbecause models only add segmentation patches on top of your current image, it is not possible to chain models")
+        self.save_ml.clicked.connect(self.save_ml_to_pipeline)
+        self.pl_model_menuL.addWidget(self.save_ml)
+        self.l0.addWidget(self.pl_model_menu)
+
+        b += 1
         self.l0.addWidget(QLabel(""), b, 0, 1, 9)
         self.l0.setRowStretch(b, 100)
 
@@ -972,14 +988,17 @@ class MainW(QMainWindow):
         # --- current pipeline info box (loaded with update_pipeline_ui )--- #
         self.pipelineInfoBox = QGroupBox("Current Pipeline")
         self.pipelineInfoBox.setFont(self.boldfont)
-        self.pipelineInfoL = QFormLayout()
+        self.pipelineInfoL = QVBoxLayout()
         self.pipelineInfoBox.setLayout(self.pipelineInfoL)
 
         default_msg = "No pipeline loaded"
         self.pl_name = QLabel(default_msg)
         self.pl_funcs_label = QListWidget()
-        self.pipelineInfoL.addRow("Name: ", self.pl_name)
-        self.pipelineInfoL.addRow("Functions", self.pl_funcs_label)
+
+        self._pl_name = QLabel(f"Name: {self.pl_name}")
+        self.pipelineInfoL.addWidget(self._pl_name)
+        self.pipelineInfoL.addWidget(QLabel("Pipeline Stages"))
+        self.pipelineInfoL.addWidget(self.pl_funcs_label)
 
         # --- menu for interacting with pipeline (loaded with update_pipeline_ui) --- #
         self.pipelineMenu = QGroupBox("Options")
@@ -992,12 +1011,7 @@ class MainW(QMainWindow):
             "run the current pipeline on the current image layer")
         self.run_pipeline_btn.clicked.connect(self.run_pipeline)
 
-        self.set_pipeline_model_btn = QPushButton("Set pipeline model")
-        self.set_pipeline_model_btn.setToolTip(
-            "set the current pipelines final preprocessing model to the current model configuration")
-
         self.pipelineMenuL.addWidget(self.run_pipeline_btn)
-        self.pipelineMenuL.addWidget(self.set_pipeline_model_btn)
 
         # the actual pipeline object containing all the necessary context for running pipelines
         # loaded with self.import_pipeline
@@ -1048,9 +1062,12 @@ class MainW(QMainWindow):
         if self.pipeline is None:
             return
         self.pl_name.setText(self.pipeline.name)
+        self._pl_name.setText(f"Name: {self.pl_name.text()}")
         self.pl_funcs_label.clear()
         for i, func in enumerate(self.pipeline):
             self.pl_funcs_label.addItem(f"{i + 1}. {func.__name__}")
+        if self.pipeline.segModel is not None:
+            self.pl_funcs_label.addItem(f"{len(self.pipeline) + 1}. Model: {self.pipeline.segModel.__name__()}")
 
         self.l1.addWidget(self.pipelineInfoBox)
         self.l1.addWidget(self.pipelineMenu)
@@ -1066,8 +1083,11 @@ class MainW(QMainWindow):
                 curr_img = curr_img[0]
             for func in self.pipeline:
                 curr_img = func(curr_img)
-            self.pipeline.stack_after = curr_img
             io._initialize_images(self, curr_img, load_3D=self.load_3D)
+            if self.pipeline.segModel is not None:
+                self.compute_segmentation(model_name = self.pipeline.segModel.__name__)
+
+            self.pipeline.stack_after = curr_img
             self.enable_buttons()
             self.run_pipeline_btn.setText("Revert Pipeline")
             self.run_pipeline_btn.setToolTip(
@@ -1083,6 +1103,39 @@ class MainW(QMainWindow):
             self.run_pipeline_btn.setToolTip(
                 "run the current pipeline on the current image layer")
             self.loaded_pl_stack = False
+
+    def save_ml_to_pipeline(self):
+        try:
+            last_wdgt = self.pl_model_menuL.itemAt(self.pl_model_menuL.count() - 1).widget()
+            if isinstance(last_wdgt, QCollapsible):
+                self.pl_model_menuL.removeWidget(last_wdgt)
+                last_wdgt.deleteLater()
+                self.pl_model_menu.update()
+            if self.pipeline is not None:
+                if not hasattr(self, "model"):
+                    raise Exception("no model selected")
+                self.pipeline.segModel = self.model
+                self.update_pipeline_ui()
+            else:
+                raise Exception("no pipeline selected")
+
+        except Exception as e:
+            error_widget = QCollapsible("error")
+            error_widget.addWidget(QLabel(str(e)))
+            self.pl_model_menuL.addWidget(error_widget)
+
+    # --- custom setter/getter for current_model so that UI can update pipeline info without needing a bunch of extra crap --- #
+    @property
+    def current_model(self):
+        try:
+            return self.__dict__["current_model"]
+        except KeyError:
+            return None
+
+    @current_model.setter
+    def current_model(self, name):
+        self.__dict__["current_model"] = name
+        self.ml_label.setText(f"Current model: {self.__dict__["current_model"]}")
 
     def level_change(self, r):
         r = ["red", "green", "blue"].index(r)
@@ -1450,7 +1503,7 @@ class MainW(QMainWindow):
         self.currentZ = 0
         self.flows = [[], [], [], [], [[]]]
         # masks matrix
-        # image matrix with a scale disk
+        # image matrix with scale disk
         self.stack = np.zeros((1, self.Ly, self.Lx, 3))
         self.Lyr, self.Lxr = self.Ly, self.Lx
         self.Ly0, self.Lx0 = self.Ly, self.Lx

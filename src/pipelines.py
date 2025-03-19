@@ -1,3 +1,4 @@
+from cellpose.models import Cellpose, CellposeModel
 import numpy as np
 from functools import partial
 import pickle
@@ -24,6 +25,7 @@ class Pipeline():
     # as long as theyre nxm it will output that many images too
     def __init__(self) -> None:
         self.pipeline: List[Callable] = []
+        self._segModel: CellposeModel | Cellpose = None
         self.name: str = ""
         # in cellpose theyre called stack so its called stack here for
         # consistency
@@ -32,6 +34,15 @@ class Pipeline():
 
     def add_func(self, func: Callable):
         self.pipeline.append(func)
+
+
+    @property
+    def segModel(self):
+        return self._segModel
+
+    @segModel.setter
+    def segModel(self, model : Cellpose | CellposeModel):
+        self._segModel = model
 
     def __len__(self):
         return len(self.pipeline)

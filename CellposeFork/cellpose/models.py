@@ -157,6 +157,7 @@ class Cellpose():
         self.backbone = backbone
 
         model_type = "cyto3" if model_type is None else model_type
+        self.model_type = model_type
 
         self.diam_mean = 30.  # default for any cyto model
         nuclear = "nuclei" in model_type
@@ -264,6 +265,9 @@ class Cellpose():
         models_logger.info(">>>> TOTAL TIME %0.2f sec" % (time.time() - tic0))
 
         return masks, flows, styles, diams
+
+    def __name__(self):
+        return self.model_type
 
 
 def get_model_params(
@@ -447,6 +451,7 @@ class CellposeModel():
             self.diam_labels = self.diam_mean
 
         self.net_type = f"cellpose_{backbone}"
+        self.model_type = model_type
 
     def eval(
             self,
@@ -780,6 +785,9 @@ class CellposeModel():
             models_logger.info("masks created in %2.2fs" % (flow_time))
 
         return masks
+    
+    def __name__(self):
+        return self.model_type
 
 
 class SizeModel():
