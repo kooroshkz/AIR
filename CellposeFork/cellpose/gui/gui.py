@@ -1041,7 +1041,6 @@ class MainW(QMainWindow):
         with open(file_path, 'wb') as fp:
             pickle.dump(self.pipeline, fp)
 
-
     def import_pipeline(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self, "open exported pipeline", ".")
