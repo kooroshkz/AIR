@@ -1014,12 +1014,33 @@ class MainW(QMainWindow):
 
         self.pipelineMenuL.addWidget(self.run_pipeline_btn)
 
+        # --- save pipeline to file --- #
+        self.pipelineExport = QGroupBox("Export")
+        self.pipelineExport.setFont(self.boldfont)
+        self.pipelineExportL = QVBoxLayout()
+        self.pipelineExport.setLayout(self.pipelineExportL)
+        self.pipelineExport_btn = QPushButton("export to file")
+        self.pipelineExport_btn.setToolTip(
+            "Export the current pipeline to a file\nNote: you must have selected a model and added it to your pipeline to export")
+        self.pipelineExport_btn.clicked.connect(self.export_pipeline)
+        self.pipelineExportL.addWidget(self.pipelineExport_btn)
+
         # the actual pipeline object containing all the necessary context for running pipelines
         # loaded with self.import_pipeline
         self.pipeline = None
 
         # dont render the pipeline info until a pipeline is actually loaded
         # self.l1.addWidget(self.pipelineInfoBox)
+
+    def export_pipeline(self):
+        if self.pipeline is None or self.pipeline.segModel is None:
+            return
+        file_path, _ = QFileDialog.getSaveFileName(self, "save to file", ".")
+        if not file_path:
+            return
+        with open(file_path, 'wb') as fp:
+            pickle.dump(self.pipeline, fp)
+
 
     def import_pipeline(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1073,6 +1094,7 @@ class MainW(QMainWindow):
 
         self.l1.addWidget(self.pipelineInfoBox)
         self.l1.addWidget(self.pipelineMenu)
+        self.l1.addWidget(self.pipelineExport)
         self.l1.update()
 
     def run_pipeline(self):
