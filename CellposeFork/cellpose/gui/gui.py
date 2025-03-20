@@ -943,7 +943,6 @@ class MainW(QMainWindow):
         self.pl_filter_menuL.addWidget(self.save_filter_pl_btn)
         self.denoiseBoxG.addWidget(self.pl_filter_menu)
 
-
         b += 1
         # --- pipeline menu for adding models --- #
         self.pl_model_menu = QGroupBox("Pipeline Menu")
