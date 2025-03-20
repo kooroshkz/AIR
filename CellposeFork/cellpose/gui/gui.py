@@ -13,7 +13,7 @@ import pickle
 
 from qtpy import QtGui, QtCore
 from superqt import QRangeSlider, QCollapsible
-from qtpy.QtWidgets import QFileDialog, QFormLayout, QListWidget, QScrollArea, QMainWindow, QApplication, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget, QScrollBar, QComboBox, QGridLayout, QPushButton, QFrame, QCheckBox, QLabel, QProgressBar, QLineEdit, QMessageBox, QGroupBox
+from qtpy.QtWidgets import QFileDialog, QFormLayout, QHBoxLayout, QListWidget, QScrollArea, QMainWindow, QApplication, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget, QScrollBar, QComboBox, QGridLayout, QPushButton, QFrame, QCheckBox, QLabel, QProgressBar, QLineEdit, QMessageBox, QGroupBox
 import pyqtgraph as pg
 
 import numpy as np
@@ -931,6 +931,18 @@ class MainW(QMainWindow):
         self.invert_cb.setFont(self.medfont)
         self.invert_cb.setToolTip("invert image")
         self.filtBoxG.addWidget(self.invert_cb, b0, 3, 1, 3)
+
+        b0 += 1
+        self.pl_filter_menu = QWidget()
+        self.pl_filter_menuL = QHBoxLayout()
+        self.pl_filter_menu.setLayout(self.pl_filter_menuL)
+        self.pl_filter_current = QLabel("Current filter: None")
+        self.save_filter_pl_btn = QPushButton("Add to pipeline")
+        self.save_filter_pl_btn.clicked.connect(lambda: print("saved filter"))
+        self.pl_filter_menuL.addWidget(self.pl_filter_current)
+        self.pl_filter_menuL.addWidget(self.save_filter_pl_btn)
+        self.denoiseBoxG.addWidget(self.pl_filter_menu)
+
 
         b += 1
         # --- pipeline menu for adding models --- #
