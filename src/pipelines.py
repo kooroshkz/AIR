@@ -1,3 +1,4 @@
+from cellpose.denoise import DenoiseModel
 from cellpose.models import Cellpose, CellposeModel
 import numpy as np
 from functools import partial
@@ -25,7 +26,8 @@ class Pipeline():
     # as long as theyre nxm it will output that many images too
     def __init__(self) -> None:
         self.pipeline: List[Callable] = []
-        self._segModel: CellposeModel | Cellpose = None
+        self._segModel: CellposeModel | Cellpose | None = None
+        self._filtModel: DenoiseModel | None = None
         self.name: str = ""
         # in cellpose theyre called stack so its called stack here for
         # consistency
@@ -34,6 +36,14 @@ class Pipeline():
 
     def add_func(self, func: Callable):
         self.pipeline.append(func)
+
+    @property
+    def filtModel(self):
+        return self._filtModel
+
+    @filtModel.setter
+    def filtModel(self, model : DenoiseModel | None):
+        self._filtModel = model
 
     @property
     def segModel(self):
@@ -45,6 +55,7 @@ class Pipeline():
 
     def __len__(self):
         return len(self.pipeline)
+
 
     def __getitem__(self, idx):
         return self.pipeline[idx]

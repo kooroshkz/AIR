@@ -934,12 +934,18 @@ class MainW(QMainWindow):
 
         b0 += 1
         self.pl_filter_menu = QWidget()
-        self.pl_filter_menuL = QHBoxLayout()
+        self.pl_filter_menuL = QVBoxLayout()
         self.pl_filter_menu.setLayout(self.pl_filter_menuL)
-        self.pl_filter_current = QLabel("Current filter: None")
-        self.save_filter_pl_btn = QPushButton("Add to pipeline")
-        self.save_filter_pl_btn.clicked.connect(lambda: print("saved filter"))
-        self.pl_filter_menuL.addWidget(self.pl_filter_current)
+        self.pl_filter_currL = QHBoxLayout()
+        self.pl_filter_current = QLabel("Current filter:")
+        self.pl_filter_curr_name = QLabel("None")
+        self.save_filter_pl_btn = QPushButton("Add filter to pipeline")
+        self.save_filter_pl_btn.clicked.connect(self.save_filter_pl)
+
+        self.pl_filter_currL.addWidget(self.pl_filter_current)
+        self.pl_filter_currL.addWidget(self.pl_filter_curr_name)
+
+        self.pl_filter_menuL.addLayout(self.pl_filter_currL)
         self.pl_filter_menuL.addWidget(self.save_filter_pl_btn)
         self.denoiseBoxG.addWidget(self.pl_filter_menu)
 
@@ -1099,9 +1105,15 @@ class MainW(QMainWindow):
         self.pl_funcs_label.clear()
         for i, func in enumerate(self.pipeline):
             self.pl_funcs_label.addItem(f"{i + 1}. {func.__name__}")
-        if self.pipeline.segModel is not None:
+
+        if self.pipeline.filtModel is not None:
             self.pl_funcs_label.addItem(
-                f"{len(self.pipeline) + 1}. Model: {self.pipeline.segModel.__name__()}")
+                f"{len(self.pipeline) + 1}. Filter Model: {self.pipeline.filtModel.__name__()}")
+
+        if self.pipeline.segModel is not None:
+            offset = 2 if self.pipeline.filtModel is not None else 1
+            self.pl_funcs_label.addItem(
+                f"{len(self.pipeline) + offset}. Model: {self.pipeline.segModel.__name__()}")
 
         self.l1.addWidget(self.pipelineInfoBox)
         self.l1.addWidget(self.pipelineMenu)
@@ -1142,6 +1154,7 @@ class MainW(QMainWindow):
 
     def save_ml_to_pipeline(self):
         try:
+            #remove or add the error message from a previous attempt
             last_wdgt = self.pl_model_menuL.itemAt(
                 self.pl_model_menuL.count() - 1).widget()
             if isinstance(last_wdgt, QCollapsible):
@@ -1160,6 +1173,30 @@ class MainW(QMainWindow):
             error_widget = QCollapsible("error")
             error_widget.addWidget(QLabel(str(e)))
             self.pl_model_menuL.addWidget(error_widget)
+
+    def save_filter_pl(self):
+        try:
+
+            last_wdgt = self.pl_filter_menuL.itemAt(
+                self.pl_filter_menuL.count() - 1).widget()
+            if isinstance(last_wdgt, QCollapsible):
+                self.pl_filter_menuL.removeWidget(last_wdgt)
+                last_wdgt.deleteLater()
+                self.pl_filter_menuL.update()
+
+            if self.pipeline is not None:
+                if not hasattr(self, "denoise_model"):
+                    raise Exception("no filter model selected")
+
+                self.pipeline.filtModel = self.denoise_model
+                self.update_pipeline_ui()
+            else:
+                raise Exception("No pipeline selected")
+
+        except Exception as e:
+            error_widget = QCollapsible("error")
+            error_widget.addWidget(QLabel(str(e)))
+            self.pl_filter_menuL.addWidget(error_widget)
 
     # --- custom setter/getter for current_model so that UI can update pipeline info without needing a bunch of extra crap --- #
     @property
@@ -2654,6 +2691,9 @@ class MainW(QMainWindow):
             # denoising model
             self.denoise_model = denoise.DenoiseModel(
                 gpu=self.useGPU.isChecked(), model_type=model_name)
+
+            self.update_pipeline_ui()
+
             self.progress.setValue(10)
             diam_up = 30. if "cyto" in model_name else 17.
 

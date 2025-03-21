@@ -720,6 +720,7 @@ class DenoiseModel():
             diam_mean=30.,
             device=None):
         self.nchan = nchan
+        self.model_type = model_type
         if pretrained_model and (not isinstance(pretrained_model, str) and
                                  not isinstance(pretrained_model, Path)):
             raise ValueError("pretrained_model must be a string or path")
@@ -1012,6 +1013,9 @@ class DenoiseModel():
             denoise_logger.info("imgs denoised in %2.2fs" % (net_time))
 
         return imgs
+    def __name__(self):
+        print(f"calling name: {self.model_type}")
+        return self.model_type
 
 
 def train(

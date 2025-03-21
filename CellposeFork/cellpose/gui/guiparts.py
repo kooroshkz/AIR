@@ -174,13 +174,13 @@ class DenoiseButton(QPushButton):
                 parent.restore = None
                 return
             parent.restore = self.model_type
-            parent.pl_filter_current.setText(f"Current filter: {self.model_type}")
+            parent.pl_filter_curr_name.setText(self.model_type)
             parent.compute_saturation()
         elif self.model_type != "none":
-            parent.pl_filter_current.setText(f"Current filter: {self.model_type}")
+            parent.pl_filter_curr_name.setText(self.model_type)
             parent.compute_denoise_model(model_type=self.model_type)
         else:
-            parent.pl_filter_current.setText(f"Current filter: None")
+            parent.pl_filter_curr_name.setText("None")
             parent.clear_restore()
         parent.set_restore_button()
 
