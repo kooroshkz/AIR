@@ -42,7 +42,7 @@ class Pipeline():
         return self._filtModel
 
     @filtModel.setter
-    def filtModel(self, model : DenoiseModel | None):
+    def filtModel(self, model: DenoiseModel | None):
         self._filtModel = model
 
     @property
@@ -55,7 +55,6 @@ class Pipeline():
 
     def __len__(self):
         return len(self.pipeline)
-
 
     def __getitem__(self, idx):
         return self.pipeline[idx]

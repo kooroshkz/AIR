@@ -1013,6 +1013,7 @@ class DenoiseModel():
             denoise_logger.info("imgs denoised in %2.2fs" % (net_time))
 
         return imgs
+
     def __name__(self):
         print(f"calling name: {self.model_type}")
         return self.model_type

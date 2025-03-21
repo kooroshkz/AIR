@@ -1153,7 +1153,7 @@ class MainW(QMainWindow):
 
     def save_ml_to_pipeline(self):
         try:
-            #remove or add the error message from a previous attempt
+            # remove or add the error message from a previous attempt
             last_wdgt = self.pl_model_menuL.itemAt(
                 self.pl_model_menuL.count() - 1).widget()
             if isinstance(last_wdgt, QCollapsible):
