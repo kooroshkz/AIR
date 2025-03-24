@@ -164,6 +164,12 @@ annotationTranslator/image_uploads/*
 annotationTranslator/logs/*
 annotationTranslator/database/database.db
 
+exports
+images
+
+CellposeFork/images
+# ignore test pipelines
+test_pipeline*
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

@@ -12,12 +12,15 @@ Key Features:
 - Edge detection
 """
 
-from typing import Union, Tuple
+from typing import Callable, List, Union, Tuple
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 import cv2
 from skimage.feature import local_binary_pattern
 from scipy.ndimage import gaussian_filter
+
+# global storage of all available functions
+IMG_FUNCTIONS: List[Callable] = []
 
 
 def apply_gaussian_blur(
@@ -87,6 +90,33 @@ def apply_contrast_enhancement(
         enhanced = clahe.apply(img_array)
 
     return enhanced
+
+
+def otsu_thresholding(img: np.ndarray) -> np.ndarray:
+    img = img.astype(np.uint16)
+
+    if len(img.shape) == 3:  # not greyscale
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    elif len(img.shape) != 2:
+        raise TypeError(
+            "Image argument to otsu_thresholding must be of type mxnx3 or mxn")
+
+    # otsu threshold
+    _, thresholded = cv2.threshold(
+        img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # clean image
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernel)
+
+    return mask
+
+
+def otsu_thresholding_no_mask(img: np.ndarray) -> np.ndarray:
+    img = img.astype(np.uint16)
+    _, thresholded = cv2.threshold(
+        img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    return thresholded
 
 
 def apply_texture_analysis(
@@ -430,3 +460,32 @@ def sanitize_dimensional_image(pil_img: Image.Image) -> np.ndarray:
         gray_img = input_array
 
     return gray_img
+
+
+def split_channels(
+        img: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    assert len(img.shape) == 3
+    print("cannot apply RGB to greyscale image")
+    r = img.copy()
+    r[:, :, 0] = 0
+    r[:, :, 1] = 0
+
+    g = img.copy()
+    g[:, :, 0] = 0
+    g[:, :, 2] = 0
+
+    b = img.copy()
+    b[:, :, 1] = 0
+    b[:, :, 2] = 0
+
+    return (r, g, b)
+
+
+IMG_FUNCTIONS.extend([
+    apply_grayscale, apply_saturation,
+    apply_edge_enhance, apply_edge_detection,
+    apply_gaussian_blur, apply_contrast_enhancement,
+    apply_texture_analysis, apply_adaptive_threshold,
+    apply_sharpening, apply_ridge_detection, otsu_thresholding,
+    otsu_thresholding_no_mask, split_channels
+])

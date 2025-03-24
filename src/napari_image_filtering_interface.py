@@ -15,12 +15,14 @@ from .napari_image_filters import (
     apply_edge_enhance, apply_edge_detection,
     apply_gaussian_blur, apply_contrast_enhancement,
     apply_texture_analysis, apply_adaptive_threshold,
-    apply_sharpening, apply_ridge_detection
+    apply_sharpening, apply_ridge_detection, otsu_thresholding,
+    otsu_thresholding_no_mask, split_channels
 )
 
-from .chat_interface import (
-    ChatWidget
-)
+from .chat_interface import ChatWidget
+from .pipelines import WorkflowWidget
+from .cellpose_launch import CellposeLaunchPoint
+from .napari_image_filters_ui import ImageFiltersUI
 
 
 class ImageFilterWidget(QWidget):
@@ -78,7 +80,8 @@ class ImageFilterWidget(QWidget):
         layout.addLayout(sat_layout)
 
         # Filter buttons
-        filter_buttons = [
+        self.filter_buttons = [
+            ("Split channels", self._split_channels),
             ("Grayscale", self._apply_grayscale),
             ("Edge Enhance", self._apply_edge_enhance),
             ("Edge Detection", self._apply_edge_detection),
@@ -87,19 +90,38 @@ class ImageFilterWidget(QWidget):
             ("Texture Analysis", self._apply_texture_analysis),
             ("Adaptive Threshold", self._apply_adaptive_threshold),
             ("Sharpen", self._apply_sharpening),
-            ("Ridge Detection", self._apply_ridge_detection)
+            ("Ridge Detection", self._apply_ridge_detection),
+            ("Otsu thresholding", self._apply_otsu_thresholding),
+            ("Otsu thresholding (no mask)", self._apply_otsu_thresholding_no_mask),
         ]
 
-        for name, method in filter_buttons:
-            btn = QPushButton(name)
-            btn.clicked.connect(method)
-            layout.addWidget(btn)
+        # for name, method in self.filter_buttons:
+        #     btn = QPushButton(name)
+        #     btn.clicked.connect(method)
+        #     layout.addWidget(btn)
+
+        open_btn = QPushButton("view image filters")
+        open_btn.clicked.connect(self._view_filters)
+        layout.addWidget(open_btn)
 
         # Initialize the AI view
         self.chat_widget = ChatWidget(viewer, self)
         layout.addWidget(self.chat_widget)
 
+        # Initialize the history view
+        self.workflow = WorkflowWidget(viewer, self)
+        layout.addWidget(self.workflow)
+
+        # Initialize the cellpose interface, which is used to fine tune the
+        # model which is the final stage in their custom pipeline
+        self.model_interf = CellposeLaunchPoint(viewer, self)
+        layout.addWidget(self.model_interf)
+
         self.setLayout(layout)
+
+    def _view_filters(self):
+        filters_interface = ImageFiltersUI(self.filter_buttons)
+        filters_interface.exec_()
 
     def _get_current_layer(self):
         """
@@ -117,6 +139,8 @@ class ImageFilterWidget(QWidget):
         # Check if any layers are selected
         if not selected_layers:
             # pdb.set_trace()
+            self.chat_widget.add_to_chat(
+                "[ERROR] please select an image layer")
             raise ValueError("Please select an image layer")
 
         # Find the first image layer
@@ -198,11 +222,15 @@ class ImageFilterWidget(QWidget):
             if filter_func in [
                     apply_grayscale,
                     apply_texture_analysis,
-                    apply_adaptive_threshold]:
+                    apply_adaptive_threshold,
+                    otsu_thresholding,
+                    otsu_thresholding_no_mask]:
+
                 # RGB & RGBA images
                 if original_data.ndim == 3 and original_data.shape[2] in [
                         3, 4]:
                     original_data = np.mean(original_data, axis=2)
+
                 # Single-channel 3D array
                 elif original_data.ndim == 3 and original_data.shape[2] == 1:
                     original_data = original_data.squeeze()
@@ -224,6 +252,20 @@ class ImageFilterWidget(QWidget):
                     # Process single 2D image or RGB image directly
                     filtered_array = filter_func(original_data)
             else:
+
+                # special case: splitting into 3 channels, so add 3 new layers
+                if filter_func is split_channels:
+                    img_r, img_b, img_g = filter_func(original_data)
+                    filter_name = filter_func.__name__.replace(
+                        "apply_", "").replace("_", " ").title()
+                    new_layer_name = f"{layer.name} | {filter_name}"
+
+                    self.viewer.add_image(img_r, name=new_layer_name + '_r')
+                    self.viewer.add_image(img_g, name=new_layer_name + '_g')
+                    self.viewer.add_image(img_b, name=new_layer_name + '_b')
+                    self.workflow.add_event_to_workflow(filter_func)
+                    return
+
                 # Apply filter directly for non-special cases
                 filtered_array = filter_func(original_data)
 
@@ -235,12 +277,17 @@ class ImageFilterWidget(QWidget):
             filter_name = filter_func.__name__.replace(
                 "apply_", "").replace("_", " ").title()
             new_layer_name = f"{layer.name} | {filter_name}"
+
             self.viewer.add_image(filtered_array, name=new_layer_name)
+            self.workflow.add_event_to_workflow(filter_func)
 
         except Exception as e:
             print(f"Error applying filter: {e}")
             import traceback
             traceback.print_exc()
+
+    def add_to_chat(self, log: str):
+        self.chat_widget.add_to_chat(log)
 
     def _apply_saturation(self):
         """Apply saturation adjustment to current layer."""
@@ -283,6 +330,16 @@ class ImageFilterWidget(QWidget):
     def _apply_ridge_detection(self):
         """Apply ridge detection to the current image."""
         self._apply_filter(apply_ridge_detection)
+
+    def _apply_otsu_thresholding(self):
+        """Otsu thresholding filter for cell segmentation (with 5x5 ones kernel applied)"""
+        self._apply_filter(otsu_thresholding)
+
+    def _apply_otsu_thresholding_no_mask(self):
+        self._apply_filter(otsu_thresholding_no_mask)
+
+    def _split_channels(self):
+        self._apply_filter(split_channels)
 
 
 def napari_experimental_provide_dock_widget():
