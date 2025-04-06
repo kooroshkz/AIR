@@ -11,7 +11,7 @@ Welcome to the **AIR Plugin** documentation. This plugin allows biologists to co
 - [Getting Started](getting-started.md)
 - [Installation](installation.md)
 - [User Guide](user-guide.md)
-- [API Reference](api.md)
+- [API Reference](api/index.md)
 - [How to Contribute](contributing.md)
 
 ## Repository

@@ -26,4 +26,3 @@ Instead of clicking, you can say:
 - `"Enhance edges"`
 - `"Increase contrast"`
 
-For advanced AI interactions, refer to the [API Documentation](api.md).
