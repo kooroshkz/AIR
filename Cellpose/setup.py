@@ -95,7 +95,9 @@ setup(
     ],
     # packages=setuptools.find_packages(),
     packages=['cellpose'],
-    # use_scm_version=True, #commented out because we dont need to keep track of versions anymore since this is a standalone fork, and otherwise we would need a really dirty workaround
+    # use_scm_version=True, #commented out because we dont need to keep track
+    # of versions anymore since this is a standalone fork, and otherwise we
+    # would need a really dirty workaround
     install_requires=install_deps,
     tests_require=['pytest'],
     extras_require={
