@@ -23,6 +23,7 @@ dependencies = [
     "pydantic",
     "sounddevice",
     "wave",
+    "cellpose",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,7 @@ dev = [
     "PyQt5",
     "setuptools",
     "wheel",
+    "cellpose",
 ]
 
 # If you want to build the docs locally with mkdocs serve
