@@ -100,7 +100,7 @@ class ImageFilterWidget(QWidget):
         #     btn.clicked.connect(method)
         #     layout.addWidget(btn)
 
-        open_btn = QPushButton("view image filters")
+        open_btn = QPushButton("View Image Filters")
         open_btn.clicked.connect(self._view_filters)
         layout.addWidget(open_btn)
 

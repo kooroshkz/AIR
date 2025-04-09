@@ -83,18 +83,18 @@ def test_widget_initialization(widget):
 def test_filter_buttons_exist(widget):
     """Test that all filter buttons are present."""
     expected_buttons = {
-        "Grayscale",
-        "Edge Enhance",
-        "Edge Detection",
-        "Gaussian Blur",
-        "Contrast Enhance",
-        "Texture Analysis",
-        "Adaptive Threshold",
-        "Sharpen",
-        "Undo"
+        "view image filters",
+        "send",
+        "hold to record",
+        "import workflow",
+        "record",
+        "stop",
+        "set name",
+        "save",
+        "launch cellpipe"
     }
 
-    buttons = {btn.text() for btn in widget.findChildren(QPushButton)}
+    buttons = {btn.text().lower() for btn in widget.findChildren(QPushButton)}
     assert expected_buttons.issubset(buttons)
 
 
