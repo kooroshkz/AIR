@@ -37,5 +37,6 @@ class DropdownPopup(QDialog):
         """Returns the selected option when dialog is accepted."""
         return self.combo_box.currentText()
 
+
 def run_tts_in_thread(elvenobj, text):
     run(elvenobj(text))

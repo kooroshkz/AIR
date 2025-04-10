@@ -33,6 +33,7 @@ try:
 except OSError:
     STT = None
 
+
 class ChatWidget(QWidget):
     """
     Multi-modal chat widget supporting text and speech interaction.
@@ -66,7 +67,7 @@ class ChatWidget(QWidget):
             "style": 1,
             "use_speaker_boost": True
         }
-        voice_id = "EXAVITQu4vr4xnSDxMaL" # sarah
+        voice_id = "EXAVITQu4vr4xnSDxMaL"  # sarah
         model_id = "eleven_flash_v2_5"
         generation_url = f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id={model_id}"
 
@@ -76,7 +77,10 @@ class ChatWidget(QWidget):
 
         self.ai_system_prompt = AI_PROMPT
         self.Chat = GPT(api_key=OPENAI_API_KEY, prompt=AI_PROMPT)
-        self.Speak = ElevenLabsTTS(gen_uri=generation_url, api_key=ELEVENLABS_API_KEY, voice_settings=voice_settings)
+        self.Speak = ElevenLabsTTS(
+            gen_uri=generation_url,
+            api_key=ELEVENLABS_API_KEY,
+            voice_settings=voice_settings)
 
         if STT is not None:
             self.stt = STT(api_key=OPENAI_API_KEY)
@@ -180,7 +184,12 @@ class ChatWidget(QWidget):
             response_text, action = self.Chat.say(transcript)
             if response_text:
                 self.add_to_chat(f'[🤖] <b>{response_text}</b>')
-                Thread(target=run_tts_in_thread, args=(self.Speak.stream_tts, response_text), daemon=True).start()
+                Thread(
+                    target=run_tts_in_thread,
+                    args=(
+                        self.Speak.stream_tts,
+                        response_text),
+                    daemon=True).start()
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)
@@ -205,7 +214,12 @@ class ChatWidget(QWidget):
             response_text, action = self.Chat.say(user_input)
             if response_text:
                 self.add_to_chat(f'[🤖] <b>{response_text}</b>')
-                Thread(target=run_tts_in_thread, args=(self.Speak.stream_tts, response_text), daemon=True).start()
+                Thread(
+                    target=run_tts_in_thread,
+                    args=(
+                        self.Speak.stream_tts,
+                        response_text),
+                    daemon=True).start()
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)

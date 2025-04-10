@@ -7,13 +7,16 @@ from json import dumps, loads
 from base64 import b64decode
 import websockets
 
+
 class ActionModel(BaseModel):
     action_name: str
     action_args: List[Union[str, int, bool]]
 
+
 class ActionChainModel(BaseModel):
     response_text: str  # Note: Fixed typo "reponse_text" -> "response_text"
     action: List[ActionModel]
+
 
 class GPT:
     def __init__(self, api_key: str, prompt: str = ""):
@@ -44,6 +47,7 @@ class GPT:
         remove(file_path)
         return transcript.text
 
+
 class ElevenLabsTTS:
     def __init__(self, gen_uri, api_key, voice_settings):
         self.gen_uri = gen_uri
@@ -62,13 +66,14 @@ class ElevenLabsTTS:
             await ws.send(dumps(init_msg))
             # Start the audio playback concurrently.
             audio_task = asyncio.create_task(self.play_audio(ws))
-            
+
             # Send the text in small chunks.
             chunk_size = 50  # Adjust chunk size as desired.
             for i in range(0, len(text), chunk_size):
-                await ws.send(dumps({"text": text[i:i+chunk_size]}))
-                await asyncio.sleep(0.1)  # Allows ElevenLabs to process and stream audio.
-            
+                await ws.send(dumps({"text": text[i:i + chunk_size]}))
+                # Allows ElevenLabs to process and stream audio.
+                await asyncio.sleep(0.1)
+
             # Signal the end of the text stream.
             await ws.send(dumps({"text": ""}))
             await audio_task
