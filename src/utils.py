@@ -5,6 +5,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QVBoxLayout,
 )
+from asyncio import run
 
 
 class DropdownPopup(QDialog):
@@ -35,3 +36,6 @@ class DropdownPopup(QDialog):
     def get_selected_option(self):
         """Returns the selected option when dialog is accepted."""
         return self.combo_box.currentText()
+
+def run_tts_in_thread(elvenobj, text):
+    run(elvenobj(text))

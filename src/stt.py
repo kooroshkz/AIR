@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile
 from threading import Event, Thread
 from os import remove
 from dotenv import load_dotenv
-from src.chatgpt import GPT
+from src.ai import GPT
 import numpy as np
 import sounddevice as sd
 import wave

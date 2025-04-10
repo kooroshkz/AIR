@@ -1,6 +1,8 @@
 from os import getenv
 from openai import OpenAI
 import numpy as np
+import asyncio
+from threading import Thread
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QWidget,
@@ -23,13 +25,13 @@ from .napari_image_filters import (
     apply_sharpening,
     apply_ridge_detection,
 )
-from .chatgpt import GPT
+from .ai import GPT, ElevenLabsTTS
+from .utils import run_tts_in_thread
 # The exception handles the headless CICD testing
 try:
     from .stt import STT
 except OSError:
     STT = None
-
 
 class ChatWidget(QWidget):
     """
@@ -57,10 +59,24 @@ class ChatWidget(QWidget):
             "sharpen": apply_sharpening,
             "ridge_detection": apply_ridge_detection,
         }
+
+        voice_settings = {
+            "stability": 0.5,
+            "similarity_boost": 0.8,
+            "style": 1,
+            "use_speaker_boost": True
+        }
+        voice_id = "EXAVITQu4vr4xnSDxMaL" # sarah
+        model_id = "eleven_flash_v2_5"
+        generation_url = f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id={model_id}"
+
         AI_PROMPT = getenv("AI_PROMPT")
         OPENAI_API_KEY = getenv("OPENAI_API_KEY")
+        ELEVENLABS_API_KEY = getenv("ELEVENLABS_API_KEY")
+
         self.ai_system_prompt = AI_PROMPT
         self.Chat = GPT(api_key=OPENAI_API_KEY, prompt=AI_PROMPT)
+        self.Speak = ElevenLabsTTS(gen_uri=generation_url, api_key=ELEVENLABS_API_KEY, voice_settings=voice_settings)
 
         if STT is not None:
             self.stt = STT(api_key=OPENAI_API_KEY)
@@ -155,8 +171,8 @@ class ChatWidget(QWidget):
         Stop audio recording, transcribe the audio, and process the transcript.
         Updates the UI and sends the transcribed text to the GPT API.
         """
-        self.stt.stop_recording()
         self.record_button.setText("Transcribing...")
+        self.stt.stop_recording()
         transcript = self.stt.transcribe()
         self.chat_history.append(f"[👤] User: <i>{transcript}</i>")
 
@@ -164,6 +180,7 @@ class ChatWidget(QWidget):
             response_text, action = self.Chat.say(transcript)
             if response_text:
                 self.add_to_chat(f'[🤖] <b>{response_text}</b>')
+                Thread(target=run_tts_in_thread, args=(self.Speak.stream_tts, response_text), daemon=True).start()
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)
@@ -185,9 +202,10 @@ class ChatWidget(QWidget):
 
         # Process with LLM
         try:
-            reponse_text, action = self.Chat.say(user_input)
-            if reponse_text:
-                self.add_to_chat(f'[🤖] <b>{reponse_text}</b>')
+            response_text, action = self.Chat.say(user_input)
+            if response_text:
+                self.add_to_chat(f'[🤖] <b>{response_text}</b>')
+                Thread(target=run_tts_in_thread, args=(self.Speak.stream_tts, response_text), daemon=True).start()
             if action:
                 self.add_to_chat(f'[⚙️] <b>{self.format_action(action)}</b>')
                 self.execute_command(action)
@@ -226,7 +244,6 @@ class ChatWidget(QWidget):
         """
         Executes a command from the LLM
         """
-
         # print(command)
 
         for action in command:
@@ -238,8 +255,8 @@ class ChatWidget(QWidget):
             img = self.filter_widget.original_data.copy()
 
             if param != []:
-                filtered_array = self.available_commands[cmd_name](
-                    img, value[0])
+                filtered_array = self.available_commands[funct](
+                    img, param[0])
             else:
                 filtered_array = self.available_commands[funct](img)
             self.change_layer(layer, filtered_array, funct.title())
