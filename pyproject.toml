@@ -37,6 +37,8 @@ dev = [
     "setuptools",
     "wheel",
     "cellpose",
+    "cellpose[gui]",
+    "websockets"
 ]
 
 # If you want to build the docs locally with mkdocs serve
