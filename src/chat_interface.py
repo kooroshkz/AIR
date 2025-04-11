@@ -2,8 +2,9 @@ from os import getenv
 from openai import OpenAI
 import numpy as np
 import asyncio
+import time
 from threading import Thread
-from qtpy.QtCore import QEvent, Qt
+from qtpy.QtCore import QEvent, Qt, QTimer
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -85,6 +86,15 @@ class ChatWidget(QWidget):
         if STT is not None:
             self.stt = STT(api_key=OPENAI_API_KEY)
 
+        # Stream mode variables
+        self.streaming_active = False
+        self.silence_timer = QTimer()
+        self.silence_timer.timeout.connect(self.check_silence)
+        self.silence_threshold = 2000  # 2 seconds of silence to trigger processing
+        self.last_audio_level = 0
+        self.silence_start_time = 0
+        self.stream_transcript = ""
+
     def setup_ui(self):
         """Configure the widget's user interface."""
         layout = QVBoxLayout()
@@ -162,8 +172,110 @@ class ChatWidget(QWidget):
         self.record_button.released.connect(self.stop_audio_recording)
         input_layout.addWidget(self.record_button)
 
+        # Stream button for continuous audio capture with auto-stop
+        self.stream_button = QPushButton("Stream Mode")
+        self.stream_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                padding: 5px 15px;
+                border: none;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+            QPushButton:checked {
+                background-color: #dc3545;
+            }
+            """
+        )
+        self.stream_button.setCheckable(True)
+        self.stream_button.clicked.connect(self.toggle_streaming)
+        input_layout.addWidget(self.stream_button)
+
         layout.addLayout(input_layout)
         self.setLayout(layout)
+
+    def toggle_streaming(self):
+        """Toggle between streaming and non-streaming modes"""
+        if self.stream_button.isChecked():
+            self.start_streaming()
+        else:
+            self.stop_streaming()
+
+    def start_streaming(self):
+        """Start streaming audio with automatic silence detection"""
+        self.stream_button.setText("Stop Streaming")
+        self.record_button.setEnabled(False)
+        self.streaming_active = True
+        self.stream_transcript = ""
+
+        # Set up the streaming callback
+        def handle_transcription(text):
+            self.stream_transcript = text
+            self.chat_history.append(f"[🎤] Listening: <i>{text}</i>")
+
+        # Start streaming
+        self.stt.start_streaming(callback=handle_transcription)
+
+        # Start silence detection
+        self.silence_start_time = time.time()
+        self.silence_timer.start(500)  # Check every 500ms
+
+        self.chat_history.append("[🎤] Streaming started. I'll listen until you pause speaking...")
+
+    def stop_streaming(self):
+        """Stop streaming audio and process the final transcript"""
+        if not self.streaming_active:
+            return
+
+        self.silence_timer.stop()
+        self.stream_button.setText("Stream Mode")
+        self.record_button.setEnabled(True)
+        self.streaming_active = False
+
+        # Stop the STT streaming
+        self.stt.stop_streaming()
+
+        # Process the final transcript if we have one
+        if self.stream_transcript:
+            self.process_transcript(self.stream_transcript)
+            self.stream_transcript = ""
+
+    def check_silence(self):
+        """Check if there's been silence for the threshold duration"""
+        if not self.streaming_active:
+            return
+
+        # Get current audio level (amplitude) from STT
+        current_level = 0
+        if hasattr(self.stt, '_audio_data') and self.stt._audio_data:
+            # Get the most recent audio chunk and calculate its RMS amplitude
+            recent_chunk = self.stt._audio_data[-1]
+            if recent_chunk.size > 0:
+                current_level = np.sqrt(np.mean(np.square(recent_chunk)))
+
+        # If level is below threshold, consider it silence
+        silence_threshold = 500  # Adjust based on your microphone sensitivity
+
+        if current_level < silence_threshold:
+            # If this is the start of silence
+            if self.last_audio_level >= silence_threshold:
+                self.silence_start_time = time.time()
+
+            # Check if silence has lasted long enough and we have a transcript
+            elapsed_silence = time.time() - self.silence_start_time
+            if elapsed_silence > (self.silence_threshold / 1000) and self.stream_transcript:
+                # Auto-stop streaming and process
+                self.stream_button.setChecked(False)
+                self.stop_streaming()
+        else:
+            # Reset silence timer if there's sound
+            self.silence_start_time = time.time()
+
+        self.last_audio_level = current_level
 
     def start_audio_recording(self):
         """Start audio recording and update UI to indicate recording state."""
@@ -178,6 +290,11 @@ class ChatWidget(QWidget):
         self.record_button.setText("Transcribing...")
         self.stt.stop_recording()
         transcript = self.stt.transcribe()
+        self.process_transcript(transcript)
+        self.record_button.setText("Hold to Record")
+
+    def process_transcript(self, transcript):
+        """Process a transcript from either recording or streaming"""
         self.chat_history.append(f"[👤] User: <i>{transcript}</i>")
 
         try:
@@ -195,8 +312,6 @@ class ChatWidget(QWidget):
                 self.execute_command(action)
         except Exception as e:
             self.add_to_chat("[⚠️] Error: " + str(e))
-
-        self.record_button.setText("Hold to Record")
 
     def process_input(self):
         """
@@ -277,42 +392,3 @@ class ChatWidget(QWidget):
             if param == []:
                 self.filter_widget._push_to_history(layer)
         return
-
-        # OLD system
-        # command = command.lower().strip()
-        # parts = command.split()
-        # cmd_name = parts[0]
-
-        # # Handle saturation separately since it needs an integer value
-        # # Get current layer
-        # layer = self.filter_widget._get_current_layer()
-        # img = self.filter_widget.original_data.copy()
-
-        # # Handle commands with parameters
-        # if len(parts) > 1:
-        #     try:
-        #         value = float(parts[1])
-        #         if cmd_name in ["blur", "contrast", "saturation", "sharpen"]:
-        #             filtered_array = self.available_commands[cmd_name](img, value)
-        #             self.change_layer(layer, filtered_array, cmd_name.title())
-        #             # self.add_to_chat(f"Executed: {cmd_name} with value {value}")
-        #             return
-        #     except (IndexError, ValueError):
-        #         self.filter_widget.add_to_chat(
-        #             f"Error: {cmd_name} requires a valid numeric value"
-        #         )
-        #         return
-
-        # # Handle commands without parameters
-        # if cmd_name in self.available_commands:
-        #     try:
-        #         filtered_array = self.available_commands[cmd_name](img)
-        #         self.change_layer(layer, filtered_array, cmd_name.title())
-        #         # self.add_to_chat(f"Executed: {cmd_name}")
-        #         self.filter_widget._push_to_history(layer)
-        #         return
-        #     except Exception as e:
-        #         self.add_to_chat(f"Error executing {cmd_name}: {str(e)}")
-        #         return
-
-        # self.add_to_chat("I did not quite catch that one.")
