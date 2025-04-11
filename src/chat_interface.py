@@ -224,7 +224,8 @@ class ChatWidget(QWidget):
         self.silence_start_time = time.time()
         self.silence_timer.start(500)  # Check every 500ms
 
-        self.chat_history.append("[🎤] Streaming started. I'll listen until you pause speaking...")
+        self.chat_history.append(
+            "[🎤] Streaming started. I'll listen until you pause speaking...")
 
     def stop_streaming(self):
         """Stop streaming audio and process the final transcript"""
@@ -267,7 +268,9 @@ class ChatWidget(QWidget):
 
             # Check if silence has lasted long enough and we have a transcript
             elapsed_silence = time.time() - self.silence_start_time
-            if elapsed_silence > (self.silence_threshold / 1000) and self.stream_transcript:
+            if elapsed_silence > (
+                    self.silence_threshold /
+                    1000) and self.stream_transcript:
                 # Auto-stop streaming and process
                 self.stream_button.setChecked(False)
                 self.stop_streaming()
