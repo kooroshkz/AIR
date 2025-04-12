@@ -48,8 +48,9 @@ class CellposeNapariWidget(QWidget):
         channel1_layout = QHBoxLayout()
 
         chan1_label = QLabel("Channel to segment")
-        chan1_label.setToolTip("This is the channel in which the cytoplasm or nuclei which you want to segment exist")
-        
+        chan1_label.setToolTip(
+            "This is the channel in which the cytoplasm or nuclei which you want to segment exist")
+
         self.chan1_selection = QComboBox()
         options = ["0: gray", "1: red", "2: green", "3: blue"]
         self.chan1_selection.addItems(options)
@@ -60,14 +61,15 @@ class CellposeNapariWidget(QWidget):
         channel2_layout = QHBoxLayout()
 
         chan2_label = QLabel("Chan2 (optional)")
-        chan2_label.setToolTip("If the cytoplasm model is chosen, and you also have a nuclear channel, then choose the nuclear channel for this option")
+        chan2_label.setToolTip(
+            "If the cytoplasm model is chosen, and you also have a nuclear channel, then choose the nuclear channel for this option")
 
         self.chan2_selection = QComboBox()
         self.chan2_selection.addItems(options)
 
         channel2_layout.addWidget(chan2_label)
         channel2_layout.addWidget(self.chan2_selection)
-        
+
         channel2_layout.addWidget(chan2_label)
 
         channels_layout.addLayout(channel1_layout)
@@ -173,9 +175,10 @@ class CellposeNapariWidget(QWidget):
                 chan2 = self.chan2_selection.currentIndex()
 
                 channels = [chan1, chan2]  # Default to first channel
-            else: 
-                #should we still be passing channels if theres more than 4 layers, and if its fine to do either way why do the check?
-                #I didnt touch this just in case, but I dont think its necessary
+            else:
+                # should we still be passing channels if theres more than 4 layers, and if its fine to do either way why do the check?
+                # I didnt touch this just in case, but I dont think its
+                # necessary
                 chan1 = self.chan1_selection.currentIndex()
                 chan2 = self.chan2_selection.currentIndex()
                 channels = [chan1, chan2]
@@ -281,7 +284,6 @@ class CellposeLaunchPoint(QWidget):
 
         self.launch_btn.setStyleSheet(cellpose_button_stylesheet)
         self.launch_btn.clicked.connect(self._launch_cellpipe)
-
 
         self.process_launch.setStyleSheet(cellpose_button_stylesheet)
         self.process_launch.clicked.connect(self._launch_cellpose_process)
