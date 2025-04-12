@@ -23,7 +23,9 @@ dependencies = [
     "pydantic",
     "sounddevice",
     "wave",
-	  "cellpose @ file:./Cellpose"
+	  "cellpose @ file:./Cellpose",
+	  "cellpose[gui] @ file:./Cellpose",
+		"websockets",
 ]
 
 [project.optional-dependencies]

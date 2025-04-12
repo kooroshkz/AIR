@@ -41,6 +41,39 @@ class CellposeNapariWidget(QWidget):
         # Parameters
         params_layout = QVBoxLayout()
 
+        # Channels to segment
+        channels_layout = QVBoxLayout()
+        channels_layout.addWidget(QLabel("Channels"))
+
+        channel1_layout = QHBoxLayout()
+
+        chan1_label = QLabel("Channel to segment")
+        chan1_label.setToolTip("This is the channel in which the cytoplasm or nuclei which you want to segment exist")
+        
+        self.chan1_selection = QComboBox()
+        options = ["0: gray", "1: red", "2: green", "3: blue"]
+        self.chan1_selection.addItems(options)
+
+        channel1_layout.addWidget(chan1_label)
+        channel1_layout.addWidget(self.chan1_selection)
+
+        channel2_layout = QHBoxLayout()
+
+        chan2_label = QLabel("Chan2 (optional)")
+        chan2_label.setToolTip("If the cytoplasm model is chosen, and you also have a nuclear channel, then choose the nuclear channel for this option")
+
+        self.chan2_selection = QComboBox()
+        self.chan2_selection.addItems(options)
+
+        channel2_layout.addWidget(chan2_label)
+        channel2_layout.addWidget(self.chan2_selection)
+        
+        channel2_layout.addWidget(chan2_label)
+
+        channels_layout.addLayout(channel1_layout)
+        channels_layout.addLayout(channel2_layout)
+        params_layout.addLayout(channels_layout)
+
         # Diameter
         diameter_layout = QHBoxLayout()
         diameter_layout.addWidget(QLabel("Cell Diameter:"))
@@ -135,9 +168,17 @@ class CellposeNapariWidget(QWidget):
             if image_data.ndim == 2:  # Grayscale
                 channels = [0, 0]
             elif image_data.ndim == 3 and image_data.shape[2] >= 3:  # RGB
-                channels = [0, 0]  # Default to first channel
-            else:
-                channels = [0, 0]
+
+                chan1 = self.chan1_selection.currentIndex()
+                chan2 = self.chan2_selection.currentIndex()
+
+                channels = [chan1, chan2]  # Default to first channel
+            else: 
+                #should we still be passing channels if theres more than 4 layers, and if its fine to do either way why do the check?
+                #I didnt touch this just in case, but I dont think its necessary
+                chan1 = self.chan1_selection.currentIndex()
+                chan2 = self.chan2_selection.currentIndex()
+                channels = [chan1, chan2]
 
             # Run the model - handle variable number of return values
             model_output = model.eval(
@@ -212,16 +253,21 @@ class CellposeLaunchPoint(QWidget):
         super().__init__()
         self.viewer = viewer
         self.filter_widget = filter_widget
-        self.launch_btn = QPushButton("Launch CellPipe")  # the final stage
+        self.launch_btn = QPushButton("Launch CellPose")  # the final stage
         self.launch_btn.setToolTip(
             "Launch Cellpose integrated with Napari\nUsing this, you can finalize your pipeline with a variety of segmentation models\nChanges will be applied directly to the Napari viewer"
         )
+
+        self.process_launch = QPushButton("Launch CellPose (app)")
+        self.process_launch.setToolTip(
+            "Launch the Cellpose-specific UI\nGives many more options for models and settings\nHas and interactive cell segmentation finetuning loop"
+        )
+
         self.cellpose_widget = None
         self.setup_ui()
 
     def setup_ui(self):
-        self.launch_btn.setStyleSheet(
-            """
+        cellpose_button_stylesheet = """
             QPushButton {
                 background-color: #0366d6;
                 color: white;
@@ -232,11 +278,17 @@ class CellposeLaunchPoint(QWidget):
                 background-color: #0255b3;
             }
             """
-        )
+
+        self.launch_btn.setStyleSheet(cellpose_button_stylesheet)
         self.launch_btn.clicked.connect(self._launch_cellpipe)
 
-        layout = QHBoxLayout()
+
+        self.process_launch.setStyleSheet(cellpose_button_stylesheet)
+        self.process_launch.clicked.connect(self._launch_cellpose_process)
+
+        layout = QVBoxLayout()
         layout.addWidget(self.launch_btn)
+        layout.addWidget(self.process_launch)
 
         self.setLayout(layout)
 
@@ -270,3 +322,6 @@ class CellposeLaunchPoint(QWidget):
             )
             self.filter_widget.add_to_chat(
                 "[INFO] Reopened Cellpose interface in Napari")
+
+    def _launch_cellpose_process(self):
+        subprocess.run(["python", "-m", "cellpose"])

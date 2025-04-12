@@ -252,11 +252,12 @@ class ChatWidget(QWidget):
 
         # Get current audio level (amplitude) from STT
         current_level = 0
-        if hasattr(self.stt, '_audio_data') and self.stt._audio_data:
-            # Get the most recent audio chunk and calculate its RMS amplitude
-            recent_chunk = self.stt._audio_data[-1]
-            if recent_chunk.size > 0:
-                current_level = np.sqrt(np.mean(np.square(recent_chunk)))
+        # if hasattr(self.stt, '_audio_data') and self.stt._audio_data:
+        #     # Get the most recent audio chunk and calculate its RMS amplitude
+        #     recent_chunk = self.stt._audio_data[-1]
+        #     if recent_chunk.size > 0:
+        #         print(np.mean(np.square(recent_chunk)))
+        #         current_level = np.sqrt(np.mean(np.square(recent_chunk)))
 
         # If level is below threshold, consider it silence
         silence_threshold = 500  # Adjust based on your microphone sensitivity
